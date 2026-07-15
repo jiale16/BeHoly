@@ -1,0 +1,198 @@
+# ============================================================
+# sensitive_words.txt —— 本地敏感词库
+# ------------------------------------------------------------
+# 每行一个词；以 # 开头的行视为注释，会被忽略。
+# 匹配方式：子串包含匹配（不区分大小写）。
+#
+# 注意：本文件仅用于本地离线匹配，绝不会上传。
+# 用户可根据需求自行扩充或删减。
+# ============================================================
+
+# —— 中文成人/色情相关敏感词（基础词库）——
+色情
+黄色视频
+黄色网站
+成人视频
+成人网站
+AV女优
+女优
+裸聊
+裸体
+裸照
+裸拍
+裸秀
+一丝不挂
+脱衣
+脱光
+做爱
+性爱
+性行为
+性交
+口交
+肛交
+胸推
+乳交
+自慰
+手淫
+强奸
+轮奸
+迷奸
+猥亵
+淫秽
+淫乱
+淫荡
+荡妇
+妓女
+嫖娼
+卖淫
+找小姐
+约炮
+一夜情
+包夜
+上门服务
+特殊服务
+性服务
+援交
+裸贷
+裸聊
+春药
+催情
+自拍偷拍
+偷拍
+走光
+福利姬
+福利视频
+福利网站
+H动漫
+里番
+成人漫画
+色情小说
+黄色小说
+乱伦
+近亲相奸
+NTR
+绿帽
+绿帽奴
+调教
+SM
+奴役
+绑缚
+3P
+群P
+换妻
+夫妻交换
+情趣用品
+自慰器
+飞机杯
+真人做爱
+真人裸聊
+裸体直播
+色情直播
+成人直播
+啪啪
+啪啪啪
+日逼
+操逼
+傻逼
+草泥马
+肏
+肏逼
+插逼
+摸胸
+摸奶
+奶子
+大奶
+巨乳
+爆乳
+乳此性感
+波霸
+波涛汹涌
+ Tits
+boobs
+porn
+porno
+pornhub
+xvideos
+xnxx
+hentai
+sex
+sexy
+nude
+naked
+nudes
+leak
+leaked
+onlyfans
+camgirl
+camslut
+slut
+whore
+bitch
+milf
+cougar
+creampie
+blowjob
+handjob
+rimjob
+anal
+oral
+threesome
+foursome
+orgy
+gangbang
+bondage
+bdsm
+fetish
+kinky
+horney
+horny
+fucking
+fucked
+fuck
+dick
+cock
+pussy
+cunt
+vagina
+penis
+breast
+nipple
+nipples
+asshole
+butt
+booty
+cum
+sperm
+jizz
+masturbate
+masturbation
+orgasm
+climax
+virgin
+defloration
+upskirt
+panties
+lingerie
+bikini
+swimsuit
+nudity
+strip
+striptease
+escort
+brothel
+red light
+red-light
+hooker
+call girl
+sugar daddy
+sugar baby
+one night stand
+18+
+xxx
+XXX
+x-rated
+x rated
+rated x
+adult content
+explicit
+explicit content

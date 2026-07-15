@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 前台服务：屏幕监控必须以前台服务形式运行，避免被系统回收 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 媒体投影类型前台服务（Android 14 / API 34 起强制要求声明子类型） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- 通知权限（Android 13 / API 33+ 需显式申请） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 查询前台应用（判断本应用是否在前台，需用户在系统设置中授予"使用情况访问权限"） -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- 悬浮窗权限：允许后台 Service 启动 Activity 弹出悔改界面（需用户在系统设置中授予） -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- 重要：本项目严禁联网，绝不声明 INTERNET 权限 -->
+    <!-- 也不要声明 READ_MEDIA_IMAGES 等无关权限，遵循最小权限原则 -->
+
+    <application
+        android:name=".BeHolyApp"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_notification"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_notification"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.BeHoly">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 悔改提醒界面：检测到成人内容时弹出，打断当前浏览 -->
+        <activity
+            android:name=".ui.RepentanceActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <!-- 屏幕监控前台服务 -->
+        <service
+            android:name=".service.ScreenMonitorService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+    </application>
+
+</manifest>

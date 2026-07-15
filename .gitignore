@@ -1,0 +1,27 @@
+# ===== Gradle / 构建产物 =====
+.gradle/
+build/
+app/build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ===== 本地配置（含本机 SDK 路径，绝不提交） =====
+local.properties
+
+# ===== IDE（Android Studio / IntelliJ） =====
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ===== 系统 / 日志 =====
+.DS_Store
+*.log
+
+# ===== 模型二进制（需用户自行放入真实模型，不进版本库） =====
+*.tflite
+
+# ===== 密钥 / 签名文件 =====
+*.jks
+*.keystore
