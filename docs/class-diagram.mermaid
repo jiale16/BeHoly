@@ -1,0 +1,145 @@
+classDiagram
+    direction LR
+
+    class Constants {
+        <<object>>
+        +TIER_NONE: Int = 0
+        +TIER1/2/3: Int = 1/2/3
+        +SOURCE_TEXT: String
+        +SOURCE_PACKAGE: String
+        +COOLDOWN_PERIOD_MS: Long = 300000
+        +TIER2_HIT_THRESHOLD: Int = 3
+        +TIER3_HIT_THRESHOLD: Int = 5
+        +TIER_WINDOW_MS: Long = 600000
+        +ACCESSIBILITY_SCAN_THROTTLE_MS: Long = 800
+        +EXTRA_REASON: String
+        +EXTRA_HIT_TIME: String
+        +ACTION_SHOW_REPENTANCE: String
+        +NOTIFICATION_ID / HIT_NOTIFICATION_ID: Int
+    }
+
+    class DetectionResult {
+        <<data class>>
+        +tier: Int = TIER_NONE
+        +packageName: String = ""
+        +matchedWords: List~String~ = emptyList()
+        +source: String = SOURCE_TEXT
+        +recognizedText: String = ""
+        +timestamp: Long
+        +isHit: Boolean [tier in 1..3]
+    }
+
+    class SensitiveWordDictionary {
+        <<object>>
+        +isLoaded: Boolean
+        +load(context): Unit
+        +containsAny(text): List~String~
+    }
+
+    class TextDetector {
+        <<object>>
+        +detect(text: String): DetectionResult
+    }
+
+    class TierClassifier {
+        <<object>>
+        -hitHistory: Map~String,List~Long~~
+        +classify(packageName, matchedWords): Int
+        +reset(packageName): Unit
+    }
+
+    class DeviceOwnerHelper {
+        <<object>>
+        +isDeviceOwner(context): Boolean
+        +lockNow(context): Unit
+        +reboot(context): Unit
+        +hideApp(context, pkg): Boolean
+        +unhideApp(context, pkg): Boolean
+        +isAppHidden(context, pkg): Boolean
+    }
+
+    class MonitorState {
+        <<object>>
+        +lastForegroundPackage: String
+        +cooldownPackage: String
+        +cooldownUntil: Long
+        +isInCooldown(pkg): Boolean
+        +clearCooldown(): Unit
+    }
+
+    class DisposalExecutor {
+        <<object>>
+        +execute(context, result): Unit
+        -handleTier1(ctx, result): Unit
+        -handleTier2(ctx, result): Unit
+        -handleTier3(ctx, result): Unit
+    }
+
+    class BeHolyAccessibilityService {
+        <<AccessibilityService>>
+        -lastScanMs: Long
+        +onServiceConnected(): Unit
+        +onAccessibilityEvent(event): Unit
+        -traverse(node, collector): Unit
+        -onHit(result): Unit
+    }
+
+    class MonitoringService {
+        <<Service 前台>>
+        -screenOnReceiver: BroadcastReceiver
+        +onCreate(): Unit
+        +onStartCommand(intent, flags, startId): Int
+        -showRepentance(reason, hitTime): Unit
+        -startCooldown(packageName): Unit
+        -stopCooldown(): Unit
+    }
+
+    class BeHolyAdminReceiver {
+        <<DeviceAdminReceiver>>
+        +onEnabled(context, intent): Unit
+        +onDisabled(context, intent): Unit
+    }
+
+    class MainActivity {
+        <<Activity>>
+        +onResume(): Unit
+        -refreshPermissionStatus(): Unit
+        -onStartMonitorClick(): Unit
+    }
+
+    class PermissionHelper {
+        <<class>>
+        +isAccessibilityServiceEnabled(ctx): Boolean
+        +openAccessibilitySettings(ctx): Unit
+        +getDeviceOwnerAdbCommand(): String
+        +hasNotificationPermission(): Boolean
+    }
+
+    class RepentanceActivity {
+        <<Activity 既有>>
+    }
+    class RepentanceFormActivity {
+        <<Activity 既有>>
+    }
+    class RepentanceStore {
+        <<object 既有>>
+    }
+
+    BeHolyAccessibilityService ..> TextDetector : 调用
+    BeHolyAccessibilityService ..> TierClassifier : 判定tier
+    BeHolyAccessibilityService ..> MonitorState : 写lastForegroundPackage
+    BeHolyAccessibilityService ..> DisposalExecutor : execute(result)
+    TextDetector ..> SensitiveWordDictionary : containsAny
+    DisposalExecutor ..> DeviceOwnerHelper : lockNow/reboot/hideApp
+    DisposalExecutor ..> MonitoringService : ACTION_SHOW_REPENTANCE(Tier1)
+    DisposalExecutor ..> MonitorState : 写cooldown(Tier2)
+    MonitoringService ..> MonitorState : 读cooldown/lastForegroundPackage
+    MonitoringService ..> RepentanceActivity : FullScreenIntent+startActivity
+    MonitoringService ..> DeviceOwnerHelper : lockNow(冷静期重锁)
+    MainActivity ..> PermissionHelper : 状态自检/引导
+    MainActivity ..> MonitoringService : start/stop 前台服务
+    PermissionHelper ..> DeviceOwnerHelper : isDeviceOwner
+    RepentanceActivity ..> RepentanceFormActivity : startActivity(EXTRA_REASON/HIT_TIME)
+    RepentanceFormActivity ..> RepentanceStore : save/getLast
+    Constants <.. DetectionResult : tier常量
+    Constants <.. DisposalExecutor : 阈值/action

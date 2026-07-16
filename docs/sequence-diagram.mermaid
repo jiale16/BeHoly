@@ -1,0 +1,56 @@
+sequenceDiagram
+    participant A11y as BeHolyAccessibilityService
+    participant Txt as TextDetector
+    participant Tier as TierClassifier
+    participant Disp as DisposalExecutor
+    participant DO as DeviceOwnerHelper
+    participant FG as MonitoringService
+    participant RX as 屏幕解锁监听(BroadcastReceiver)
+    participant Rep as RepentanceActivity
+    participant Form as RepentanceFormActivity
+    participant Store as RepentanceStore
+
+    Note over A11y: 系统 Accessibility 事件（窗口切换/内容变更）
+    A11y->>A11y: onAccessibilityEvent(event)
+    A11y->>A11y: 取 packageName；跳过本应用包名
+    A11y->>A11y: 节流判断(ACCESSIBILITY_SCAN_THROTTLE_MS)
+    A11y->>A11y: 遍历 rootInActiveWindow 收集 text+contentDescription
+    A11y->>A11y: MonitorState.lastForegroundPackage = pkg
+    A11y->>Txt: detect(聚合文本)
+    Txt->>Txt: SensitiveWordDictionary.containsAny(text)
+    Txt-->>A11y: DetectionResult(matchedWords)
+    A11y->>Tier: classify(pkg, matchedWords)
+    Tier-->>A11y: tier (1/2/3)
+    A11y->>A11y: 构造 DetectionResult(tier,pkg,matchedWords,source,timestamp)
+    A11y->>Disp: execute(context, result)
+
+    alt Tier1 普通命中
+        Disp->>A11y: performGlobalAction(GLOBAL_ACTION_HOME) 踢回桌面
+        Disp->>FG: startForegroundService(ACTION_SHOW_REPENTANCE, reason, hitTime)
+        FG->>FG: 高优通知 FullScreenIntent + startActivity(Rep)
+        Rep-->>FG: 悔改页显示（锁屏可见）
+        Note over Rep,Form: 用户点击「我愿意悔改归向神」
+        Rep->>Form: startActivity(EXTRA_REASON, EXTRA_HIT_TIME); finish()
+        Form->>Store: save(record)
+        Form->>Form: finish() 交托回原App
+    else Tier2 明确违规（且 isDeviceOwner）
+        Disp->>DO: hideApp(pkg) 封禁
+        Disp->>DO: lockNow() 立即锁屏
+        Disp->>MonitorState: cooldownPackage=pkg; cooldownUntil=now+COOLDOWN_PERIOD_MS
+        Disp->>FG: startCooldown(pkg)
+        FG->>RX: 注册 ACTION_USER_PRESENT / SCREEN_ON
+        loop 冷静期内用户解锁且前台又落到被封App
+            RX->>FG: onReceive(USER_PRESENT)
+            FG->>FG: 读 MonitorState.isInCooldown(lastForegroundPackage)
+            FG->>DO: lockNow() 循环重锁
+        end
+        Note over FG: 冷静期到期 → stopCooldown 注销接收器（封禁保持）
+    else Tier3 严重/多次（且 isDeviceOwner）
+        Disp->>DO: hideApp(pkg) 封禁
+        Disp->>DO: lockNow() 立即锁屏
+        Disp->>DO: reboot() 重启设备（关机替代）
+    else 非 Device Owner 且 tier≥2（优雅降级）
+        Note over Disp: 退化为 Tier1：HOME + 悔改页提示<br/>（MainActivity 引导用户配置 DO）
+        Disp->>A11y: performGlobalAction(HOME)
+        Disp->>FG: ACTION_SHOW_REPENTANCE（提示需配置 DO）
+    end

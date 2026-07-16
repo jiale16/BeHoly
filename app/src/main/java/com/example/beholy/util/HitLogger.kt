@@ -55,7 +55,7 @@ object HitLogger {
         return try {
             val text = read(context)
             if (text.isBlank()) 0
-            else text.trim().split("\n").count { it.contains("| 检测命中 |") }
+            else text.trim().split("\n").count { it.contains("| 检测命中") }
         } catch (e: Exception) {
             0
         }

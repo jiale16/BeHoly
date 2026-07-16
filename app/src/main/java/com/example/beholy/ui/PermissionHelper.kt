@@ -1,25 +1,27 @@
 package com.example.beholy.ui
 
 import android.Manifest
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.projection.MediaProjectionManager
 import android.os.Build
-import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
+import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.example.beholy.data.Constants
+import com.example.beholy.util.DeviceOwnerHelper
 import com.example.beholy.util.InAppLogger
 
 /**
- * 权限与屏幕捕获授权辅助类。
+ * 权限与能力引导辅助类（新版）。
  *
- * 重点：
- * 1. 通知权限（POST_NOTIFICATIONS，API33+）需显式申请，否则前台服务通知可能不展示；
- * 2. 通过 MediaProjectionManager.createScreenCaptureIntent() 触发系统录屏授权；
- * 3. 本项目严禁联网，不申请任何网络权限（见 AndroidManifest）。
+ * 相对旧版的变化：
+ * - **移除** 旧版录屏授权相关方法（requestScreenCapture），改为无障碍服务引导；
+ * - **新增** isAccessibilityEnabled / openAccessibilitySettings（无障碍服务自检与跳转）；
+ * - **新增** isDeviceOwner / deviceOwnerAdbCommand（Device Owner 自检与配置命令展示）。
+ *
+ * 离线铁律：本项目严禁联网，不申请任何网络权限（见 AndroidManifest）。
  */
 class PermissionHelper(private val activity: AppCompatActivity) {
 
@@ -38,15 +40,39 @@ class PermissionHelper(private val activity: AppCompatActivity) {
     }
 
     /**
-     * 发起系统录屏（MediaProjection）授权。
-     * @param launcher Activity Result 启动器（在 MainActivity 中注册）
+     * 无障碍服务是否已启用（本应用对应的 BeHolyAccessibilityService）。
      */
-    fun requestScreenCapture(launcher: ActivityResultLauncher<Intent>) {
-        val projectionManager = activity.getSystemService(Context.MEDIA_PROJECTION_SERVICE)
-            as MediaProjectionManager
-        InAppLogger.i("发起录屏授权请求…")
-        launcher.launch(projectionManager.createScreenCaptureIntent())
+    fun isAccessibilityEnabled(context: Context): Boolean {
+        return runCatching {
+            val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+            val expectedId =
+                "${context.packageName}/com.example.beholy.service.BeHolyAccessibilityService"
+            am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+                .any { it.id == expectedId }
+        }.getOrDefault(false)
     }
+
+    /**
+     * 跳转系统无障碍设置页，引导用户开启本服务。
+     */
+    fun openAccessibilitySettings(context: Context) {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { context.startActivity(intent) }
+            ?: InAppLogger.w("无法跳转无障碍设置")
+    }
+
+    /**
+     * 当前应用是否已被设为 Device Owner（封禁/锁屏/重启能力的前提）。
+     */
+    fun isDeviceOwner(context: Context): Boolean = DeviceOwnerHelper.isDeviceOwner(context)
+
+    /**
+     * 一次性配置 Device Owner 的 adb 命令（用户需在电脑端执行）。
+     */
+    val deviceOwnerAdbCommand: String =
+        "adb shell dpm set-device-owner com.example.beholy/.BeHolyAdminReceiver"
 
     companion object {
         const val REQ_NOTIFICATION = 1001

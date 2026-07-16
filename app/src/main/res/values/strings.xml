@@ -1,6 +1,58 @@
 <resources>
     <string name="app_name">BeHoly</string>
-    <string name="main_hint">本地离线屏幕内容监护（成人文字 / 画面检测）。所有推理均在设备本地完成，不上传任何数据。</string>
-    <string name="btn_start">开始监控</string>
+    <string name="accessibility_service_desc">BeHoly 通过读取屏幕上显示的文本与内容描述，在设备本地匹配敏感词库，于成人内容出现时引导悔改。所有处理均在本地完成，不会上传任何数据。</string>
+    <string name="main_hint">本地离线内容监护（成人文字检测）。基于无障碍服务遍历界面文本，全部在设备本地完成，不上传任何数据。</string>
+    <string name="btn_start">开启监控</string>
     <string name="btn_stop">停止监控</string>
+
+    <!-- ===== 无障碍服务引导 ===== -->
+    <string name="status_accessibility_on">● 无障碍服务：已开启</string>
+    <string name="status_accessibility_off">○ 无障碍服务：未开启（点击右侧按钮开启）</string>
+    <string name="btn_open_accessibility">去开启无障碍服务</string>
+
+    <!-- ===== Device Owner 引导 ===== -->
+    <string name="status_device_owner_on">● 设备所有者：已配置</string>
+    <string name="status_device_owner_off">○ 设备所有者：未配置（封禁/锁屏/重启不可用）</string>
+    <string name="btn_configure_device_owner">查看 Device Owner 配置命令</string>
+    <string name="do_setup_hint">配置设备所有者（Device Owner）</string>
+    <string name="do_adb_command">请在电脑终端执行以下命令（需先开启 USB 调试）：</string>
+
+    <!-- 卸载约束提示 -->
+    <string name="do_uninstall_hint">注意：一旦配置 Device Owner，正常卸载前需先移除设备所有者（通常需出厂重置或专用命令）。</string>
+
+    <string name="monitor_start">开启监控</string>
+    <string name="monitor_stop">停止监控</string>
+
+    <!-- ===== 悔改反思表单（RepentanceFormActivity） ===== -->
+    <string name="form_title">愿主医治这一刻</string>
+    <string name="form_since_last_prefix">距上次反思：</string>
+    <string name="form_hit_info_format">本次：%1$s · %2$s</string>
+    <string name="form_label_mood">感受心情</string>
+    <string name="form_hint_mood_note">（可选）说说此刻心里的光景</string>
+    <string name="form_label_method">看的方法</string>
+    <string name="form_hint_method_note">（可选）比如如何点开、为何停不下来</string>
+    <string name="form_label_reflection">反思</string>
+    <string name="form_hint_reflection">神此刻对你说什么？你看见了自己什么？</string>
+    <string name="form_label_avoidance">以后的避免方案</string>
+    <string name="form_hint_avoidance">下次再遇这试探，你打算如何转身离开？</string>
+    <string name="form_btn_save">保存并交托</string>
+    <string name="form_btn_skip">暂不记录</string>
+
+    <string-array name="mood_options">
+        <item>空虚</item>
+        <item>愧疚</item>
+        <item>焦虑</item>
+        <item>愤怒</item>
+        <item>麻木</item>
+        <item>平静</item>
+    </string-array>
+
+    <string-array name="method_options">
+        <item>浏览器</item>
+        <item>短视频</item>
+        <item>社交软件</item>
+        <item>论坛</item>
+        <item>相册</item>
+        <item>其他</item>
+    </string-array>
 </resources>

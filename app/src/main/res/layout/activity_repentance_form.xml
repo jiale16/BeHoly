@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1A2E"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- 温柔标题（文案来自 strings.xml） -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/form_title"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#F0E68C"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 距上次反思（id：tv_since_last；值由 RepentanceFormActivity 动态填充） -->
+        <TextView
+            android:id="@+id/tv_since_last"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/form_since_last_prefix"
+            android:textSize="14sp"
+            android:textColor="#AAAAAA"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 本次命中信息（id：tv_hit_info；类型来自 EXTRA_REASON，时间由 hitTime 格式化） -->
+        <TextView
+            android:id="@+id/tv_hit_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#E74C3C"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#333355"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 感受心情（多选） -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/form_label_mood"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#EEEEEE"
+            android:layout_marginBottom="8dp" />
+
+        <!-- 多选容器：工程未依赖 Material，由 Activity 动态添加 CheckBox 代替 ChipGroup -->
+        <LinearLayout
+            android:id="@+id/layout_mood"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_mood_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/form_hint_mood_note"
+            android:inputType="textMultiLine"
+            android:minLines="1"
+            android:backgroundTint="#555577"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888899"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 看的方法（多选，决策1） -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/form_label_method"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#EEEEEE"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/layout_method"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_method_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/form_hint_method_note"
+            android:inputType="textMultiLine"
+            android:minLines="1"
+            android:backgroundTint="#555577"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888899"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 反思 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/form_label_reflection"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#EEEEEE"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_reflection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/form_hint_reflection"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:gravity="top"
+            android:backgroundTint="#555577"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888899"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 以后的避免方案 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/form_label_avoidance"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#EEEEEE"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_avoidance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/form_hint_avoidance"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:gravity="top"
+            android:backgroundTint="#555577"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888899"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 底部按钮区：保存并交托 / 暂不记录 -->
+        <Button
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="@string/form_btn_save"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="#27AE60"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btn_skip"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="@string/form_btn_skip"
+            android:textSize="15sp"
+            android:backgroundTint="#555555"
+            android:textColor="#CCCCCC" />
+
+    </LinearLayout>
+</ScrollView>

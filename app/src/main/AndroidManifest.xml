@@ -2,20 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 前台服务：屏幕监控必须以前台服务形式运行，避免被系统回收 -->
+    <!-- 前台服务：常驻通知（离线监护 + 合规拉起悔改页） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- 媒体投影类型前台服务（Android 14 / API 34 起强制要求声明子类型） -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- 通知权限（Android 13 / API 33+ 需显式申请） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- 查询前台应用（判断本应用是否在前台，需用户在系统设置中授予"使用情况访问权限"） -->
+    <!-- 查询前台应用（冷静期循环重锁时判断前台是否回到被封应用，需用户在系统中授予"使用情况访问权限"） -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-    <!-- 悬浮窗权限：允许后台 Service 启动 Activity 弹出悔改界面（需用户在系统设置中授予） -->
+    <!-- 悬浮窗权限：作为后台启动 Activity 的已知豁免，提升悔改页在国产 ROM 上的可靠性 -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- 重要：本项目严禁联网，绝不声明 INTERNET 权限 -->
-    <!-- 也不要声明 READ_MEDIA_IMAGES 等无关权限，遵循最小权限原则 -->
+    <!-- 重要：本项目严禁联网，绝不声明任何网络权限，无任何网络调用（遵循离线铁律） -->
 
     <application
         android:name=".BeHolyApp"
@@ -45,11 +43,49 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
-        <!-- 屏幕监控前台服务 -->
-        <service
-            android:name=".service.ScreenMonitorService"
+        <!-- 悔改反思表单：由 RepentanceActivity 启动，引导填写结构化反思（不新增任何权限） -->
+        <activity
+            android:name=".ui.RepentanceFormActivity"
             android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
-    </application>
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
 
+        <!-- 无障碍检测服务：遍历视图树文本做本地敏感词匹配（替代旧版截屏检测链） -->
+        <service
+            android:name=".service.BeHolyAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/beholy_accessibility_service" />
+        </service>
+
+        <!-- 前台常驻服务：常驻通知 + 合规拉起悔改页 + 冷静期循环重锁 -->
+        <service
+            android:name=".service.MonitoringService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="BeHoly 离线监护与悔改引导" />
+        </service>
+
+        <!-- Device Owner 接收器：adb 一次性 set-device-owner 激活后，方可执行封禁/锁屏/重启 -->
+        <receiver
+            android:name=".ui.BeHolyAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_policies" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>
