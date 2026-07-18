@@ -41,14 +41,33 @@ class PermissionHelper(private val activity: AppCompatActivity) {
 
     /**
      * 无障碍服务是否已启用（本应用对应的 BeHolyAccessibilityService）。
+     *
+     * 双保险判断：
+     * 1) 优先用 AccessibilityManager 列表；
+     * 2) 部分国产 ROM / Android 版本上 getEnabledAccessibilityServiceList
+     *    会返回空列表（即使服务已开启），此时回退读系统设置
+     *    ENABLED_ACCESSIBILITY_SERVICES 字符串（系统设置页自身也用此值），
+     *    避免「明明已开启却显示未开启」的误判。
      */
     fun isAccessibilityEnabled(context: Context): Boolean {
         return runCatching {
-            val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
             val expectedId =
                 "${context.packageName}/com.example.beholy.service.BeHolyAccessibilityService"
-            am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-                .any { it.id == expectedId }
+
+            // 方法1：AccessibilityManager 列表
+            val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+            if (am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+                    .any { it.id == expectedId }
+            ) {
+                return@runCatching true
+            }
+
+            // 方法2（回退）：直接读系统设置里已启用无障碍服务的组件串
+            val enabled = Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ) ?: return@runCatching false
+            enabled.split(":").any { it.equals(expectedId, ignoreCase = true) }
         }.getOrDefault(false)
     }
 
