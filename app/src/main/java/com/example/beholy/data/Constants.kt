@@ -51,6 +51,16 @@ object Constants {
         "com.meizu.suggestion"     // ← 新增
     )
 
+    /**
+     * 跳过检测：包名包含以下子串（不区分大小写）即跳过。
+     * 用于各类圣经/读经 App（如 YouVersion=com.youversion.lifechurch.bible、
+     * Crosswire=org.crosswire.android.bible、Logos=com.logos.bible 等），
+     * 避免读经时被误判。
+     */
+    val SKIP_PACKAGE_CONTAINS: Set<String> = setOf(
+        "bible"
+    )
+
     // ===== 通知 =====
     const val NOTIFICATION_CHANNEL_ID: String = "beholy_monitor_channel"
     const val NOTIFICATION_ID: Int = 1001

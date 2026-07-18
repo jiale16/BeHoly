@@ -84,12 +84,17 @@ class BeHolyAccessibilityService : AccessibilityService() {
         val detectionPkg = resolveForegroundAppPackage() ?: pkg
         val effectivePkg = detectionPkg.ifEmpty { pkg }
 
-        // 跳过自身包名，避免自我触发
-        if (pkg == packageName) return
+        // 跳过自身包名，避免自我触发。
+        // 注意：必须同时检查 effectivePkg（解析出的真实前台窗口包名）。
+        // 否则当覆盖窗口（输入法等）导致 event.packageName ≠ 前台包名时，
+        // 会从本应用自身的窗口（如显示敏感词的「悔改提醒页」）误命中自己。
+        if (pkg == packageName || effectivePkg == packageName) return
 
-        // 跳过系统应用与用户配置的白名单包名
-        if (Constants.SKIP_PACKAGE_PREFIXES.any { pkg.startsWith(it) }) return
-        if (pkg in Constants.SKIP_PACKAGE_NAMES) return
+        // 跳过系统应用与用户配置的白名单包名。
+        // 同样需对 effectivePkg 一并判断，原因同上。
+        if (Constants.SKIP_PACKAGE_PREFIXES.any { pkg.startsWith(it) || effectivePkg.startsWith(it) }) return
+        if (pkg in Constants.SKIP_PACKAGE_NAMES || effectivePkg in Constants.SKIP_PACKAGE_NAMES) return
+        if (Constants.SKIP_PACKAGE_CONTAINS.any { pkg.contains(it, ignoreCase = true) || effectivePkg.contains(it, ignoreCase = true) }) return
 
         // 词库未就绪：触发加载后本事件跳过（下一个事件即可命中）
         if (!SensitiveWordDictionary.isLoaded) {
