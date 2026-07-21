@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 步骤2：Device Owner 配置（大部分用户无法设置，收进三个点菜单） -->
+    <item
+        android:id="@+id/action_device_owner"
+        android:title="@string/btn_configure_device_owner" />
+</menu>

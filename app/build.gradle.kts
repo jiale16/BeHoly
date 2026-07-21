@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application") version "8.2.2"
     id("org.jetbrains.kotlin.android") version "1.9.22"
@@ -11,34 +13,53 @@ android {
         applicationId = "com.example.beholy"
         minSdk = 29
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.1"
+        versionCode = 4
+        versionName = "2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // 临时签名配置：复用 debug keystore 给 release 用，便于直接安装验证。
-    // 正式分发时请替换为专属 release keystore（见下方注释）
+    // 正式签名配置：从 gitignored 的 keystore.properties 读取 release keystore。
+    // 若 keystore.properties 缺失，则回退到 debug keystore（保证本地构建不中断）。
     signingConfigs {
         getByName("debug") {
             // AGP 默认 debug 签名无需显式配置，此处占位以备扩展
         }
-        create("release") {
-            // ★ 正式分发时取消下方注释并填入你的 release keystore 信息 ★
-            // storeFile = file("keystores/release.jks")
-            // storePassword = "your_store_password"
-            // keyAlias = "your_key_alias"
-            // keyPassword = "your_key_password"
-
-            // 临时：复用 debug keystore（路径与 AGP 默认值一致）
-            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+        // v2.1 旧版签名：用于覆盖安装手机上已存在的 v2.1（同签名可原地升级、保留私有数据）。
+        // 旧版 keystore 为 Android 默认 debug keystore：alias=androiddebugkey，密码=android。
+        create("v21") {
+            storeFile = rootProject.file("keystore/v21.keystore")
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        create("release") {
+            val keystorePropsFile = rootProject.file("keystore.properties")
+            if (keystorePropsFile.exists()) {
+                val keystoreProps = Properties().apply {
+                    keystorePropsFile.inputStream().use { load(it) }
+                }
+                storeFile = rootProject.file(keystoreProps["STORE_FILE"] as String)
+                storePassword = keystoreProps["STORE_PASSWORD"] as String
+                keyAlias = keystoreProps["KEY_ALIAS"] as String
+                keyPassword = keystoreProps["KEY_PASSWORD"] as String
+            } else {
+                // 回退：复用 debug keystore（仅用于本地无 keystore.properties 时的构建）
+                storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
     }
 
     buildTypes {
+        // v2.1 过渡构建：可覆盖安装旧 v2.1（保留数据并导出备份），debuggable 便于 adb 兜底。
+        create("v21") {
+            initWith(getByName("debug"))
+            signingConfig = signingConfigs.getByName("v21")
+            isDebuggable = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

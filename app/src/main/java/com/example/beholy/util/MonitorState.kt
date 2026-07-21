@@ -29,6 +29,9 @@ object MonitorState {
     @Volatile
     private var cooldownPackage: String = ""
 
+    @Volatile
+    private var a11yGuardShownAt: Long = 0L
+
     /**
      * 同包节流判断：距上次处理该包超过 [Constants.ACCESSIBILITY_SCAN_THROTTLE_MS] 才放行。
      * 返回 true 时内部会刷新该包的时间戳。
@@ -89,5 +92,17 @@ object MonitorState {
     fun clearCooldown() {
         cooldownUntil = 0L
         cooldownPackage = ""
+    }
+
+    /**
+     * 无障碍关闭劝诫守卫的冷却判断：距上次弹出超过 [Constants.A11Y_GUARD_COOLDOWN_MS] 才放行。
+     * 返回 true 时调用方应随后调用 [markA11yGuardShown] 刷新时间戳。
+     */
+    fun shouldShowA11yGuard(): Boolean =
+        System.currentTimeMillis() - a11yGuardShownAt > Constants.A11Y_GUARD_COOLDOWN_MS
+
+    /** 记录本次劝诫警告已弹出，进入冷却。 */
+    fun markA11yGuardShown() {
+        a11yGuardShownAt = System.currentTimeMillis()
     }
 }

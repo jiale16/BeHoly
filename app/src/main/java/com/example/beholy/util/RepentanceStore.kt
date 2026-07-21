@@ -1,6 +1,7 @@
 package com.example.beholy.util
 
 import android.content.Context
+import android.net.Uri
 import com.example.beholy.data.Constants
 import com.example.beholy.data.RepentanceRecord
 import kotlinx.coroutines.Dispatchers
@@ -8,6 +9,9 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 悔改反思记录的本地存储（JSONL 风格）。
@@ -96,6 +100,126 @@ object RepentanceStore {
                 if (parts.isEmpty()) "0分钟" else parts.joinToString("")
             } catch (_: Exception) {
                 "—"
+            }
+        }
+    }
+
+    /**
+     * 读取全部反思记录（按时间倒序，最新在前）。
+     * 逐行解析 JSONL，单行损坏不影响其它行，文件不存在时返回空列表。
+     */
+    suspend fun readAll(context: Context): List<RepentanceRecord> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val file = File(context.filesDir, Constants.REPENTANCE_FILE)
+                if (!file.exists()) return@withContext emptyList<RepentanceRecord>()
+                val list = mutableListOf<RepentanceRecord>()
+                BufferedReader(file.bufferedReader()).use { reader ->
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        val text = line?.trim()
+                        if (text.isNullOrEmpty()) continue
+                        try {
+                            list.add(RepentanceRecord.fromJson(JSONObject(text)))
+                        } catch (_: Exception) {
+                            // 忽略损坏行
+                        }
+                    }
+                }
+                list.sortedByDescending { it.createdAt }
+            }.getOrDefault(emptyList())
+        }
+    }
+
+    /** 记录条数（供 UI 计数）。 */
+    suspend fun count(context: Context): Int = readAll(context).size
+
+    /**
+     * 格式化为可读文本（供 UI 弹窗展示悔改日记）。
+     * 每条展示：时间、检测类型、心情、方式、反思正文、以后避免方案。
+     */
+    suspend fun toReadableText(context: Context): String {
+        val list = readAll(context)
+        if (list.isEmpty()) return "暂无悔改记录\n\n愿意在软弱时停下来的那一刻，就是恩典的开始。"
+        val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+        val sb = StringBuilder()
+        sb.append("共 ${list.size} 次回转\n\n")
+        list.forEachIndexed { idx, r ->
+            val time = sdf.format(Date(r.createdAt))
+            sb.append("${idx + 1}. [$time] ${r.reason}\n")
+            if (r.mood.isNotEmpty()) sb.append("   心情：${r.mood.joinToString("、")}\n")
+            if (r.moodNote.isNotBlank()) sb.append("   ${r.moodNote}\n")
+            if (r.method.isNotEmpty()) sb.append("   途径：${r.method.joinToString("、")}\n")
+            if (r.methodNote.isNotBlank()) sb.append("   ${r.methodNote}\n")
+            if (r.reflection.isNotBlank()) sb.append("   反思：${r.reflection}\n")
+            if (r.avoidancePlan.isNotBlank()) sb.append("   以后：${r.avoidancePlan}\n")
+            sb.append("\n")
+        }
+        return sb.toString()
+    }
+
+    /**
+     * 导出全部反思记录为 JSONL 文件（用于跨签名 / 换机保留数据）。
+     * [target] 通常来自 [android.content.Context.getExternalFilesDir]，无需存储权限，
+     * 导出的文件可在 PC 端通过 adb / USB 直接读取（Android/data/com.example.beholy/files/）。
+     * 导出时按时间正序写入，便于人工查看。
+     */
+    suspend fun exportTo(context: Context, target: File) {
+        withContext(Dispatchers.IO) {
+            val records = readAll(context).sortedBy { it.createdAt }
+            target.outputStream().use { os ->
+                os.writer().use { w ->
+                    records.forEach { w.appendLine(it.toJson().toString()) }
+                }
+            }
+        }
+    }
+
+    /**
+     * 从 JSONL 文件导入反思记录，合并进现有存储（按 [RepentanceRecord.createdAt] 去重，避免重复导入）。
+     * 返回本次实际新增的条数。文件不存在或为空 → 返回 0。
+     */
+    suspend fun importFrom(context: Context, source: File): Int {
+        return withContext(Dispatchers.IO) {
+            if (!source.exists()) return@withContext 0
+            val existing = readAll(context).map { it.createdAt }.toSet()
+            val toAppend = mutableListOf<String>()
+            BufferedReader(source.bufferedReader()).use { reader ->
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    val text = line?.trim()
+                    if (text.isNullOrEmpty()) continue
+                    try {
+                        val rec = RepentanceRecord.fromJson(JSONObject(text))
+                        if (!existing.contains(rec.createdAt)) {
+                            toAppend.add(rec.toJson().toString())
+                        }
+                    } catch (_: Exception) {
+                        // 忽略损坏行
+                    }
+                }
+            }
+            if (toAppend.isNotEmpty()) {
+                val file = File(context.filesDir, Constants.REPENTANCE_FILE)
+                file.appendText(toAppend.joinToString(separator = "\n", postfix = "\n"))
+            }
+            toAppend.size
+        }
+    }
+
+    /**
+     * 通过系统文件选择器（SAF）将悔改记录导出到用户自选位置。
+     * 使用 [android.content.ContentResolver.openOutputStream] 写入，无需存储权限；
+     * 文件保存在用户指定的真实路径（如「下载」目录），卸载 App 后仍保留，
+     * 因此可用于「换签名重装 / 换机」后恢复数据。
+     */
+    suspend fun exportToUri(context: Context, uri: Uri) {
+        withContext(Dispatchers.IO) {
+            val records = readAll(context).sortedBy { it.createdAt }
+            context.contentResolver.openOutputStream(uri, "wt")?.use { os ->
+                os.writer().use { w ->
+                    records.forEach { w.appendLine(it.toJson().toString()) }
+                }
             }
         }
     }

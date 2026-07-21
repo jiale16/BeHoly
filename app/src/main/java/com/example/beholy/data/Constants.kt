@@ -35,6 +35,10 @@ object Constants {
     /** Accessibility 同包最小处理间隔（毫秒）：避免事件风暴导致刷屏误命中 */
     const val ACCESSIBILITY_SCAN_THROTTLE_MS: Long = 800L
 
+    // ===== 无障碍关闭劝诫守卫 =====
+    /** 劝诫警告冷却（毫秒）：避免设置页内事件风暴反复弹出 */
+    const val A11Y_GUARD_COOLDOWN_MS: Long = 30_000L
+
     // ===== 包名过滤白名单（跳过检测） =====
 
     /** 跳过检测的包名前缀（包名以此开头即跳过，如系统应用） */

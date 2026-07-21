@@ -66,6 +66,10 @@ class MonitoringService : Service() {
     }
 
     companion object {
+        /** 当前是否前台常驻运行中（供 MainActivity 同步按钮状态）。 */
+        @Volatile
+        var isRunning: Boolean = false
+
         /** 拉起悔改页（Tier1 及所有层级的最终提醒） */
         const val ACTION_SHOW_REPENTANCE = "com.example.beholy.action.SHOW_REPENTANCE"
 
@@ -117,6 +121,7 @@ class MonitoringService : Service() {
         createNotificationChannel()
         startForegroundSafe()
         registerScreenReceiver()
+        isRunning = true
         InAppLogger.i("MonitoringService 已启动（前台常驻）")
     }
 
@@ -171,6 +176,9 @@ class MonitoringService : Service() {
     /**
      * 弹出悔改界面：直接 startActivity（NEW_TASK + CLEAR_TOP）+ 高优 FullScreenIntent 通知兜底。
      * 仅由本前台服务调用，符合 Android 10+ 后台启动限制（见增量设计 §1.4）。
+     *
+     * 悔改页成功弹到前台后，不再额外推送冗余的警示通知（否则弹窗与通知栏通知会同时出现）；
+     * 仅在 startActivity 失败（后台启动受限）时，才用 FullScreenIntent 通知作为兜底拉起。
      */
     private fun showRepentance(reason: String, hitTime: Long) {
         val repentanceIntent = Intent(this, RepentanceActivity::class.java).apply {
@@ -178,12 +186,11 @@ class MonitoringService : Service() {
             putExtra(Constants.EXTRA_REASON, reason)
             putExtra(Constants.EXTRA_HIT_TIME, hitTime)
         }
-        try {
-            startActivity(repentanceIntent)
-        } catch (_: Exception) {
-            // 直接启动失败时，仍由下方 FullScreenIntent 通知兜底
+        val launched = runCatching { startActivity(repentanceIntent) }.isSuccess
+        if (!launched) {
+            // 直接启动失败：由 FullScreenIntent 通知兜底拉起悔改页
+            showRepentanceNotification(repentanceIntent)
         }
-        showRepentanceNotification(reason, repentanceIntent)
     }
 
     /**
@@ -270,7 +277,7 @@ class MonitoringService : Service() {
     }
 
     /** 高优 FullScreenIntent 通知兜底：即便直接 startActivity 失败也能点亮屏幕弹出悔改页。 */
-    private fun showRepentanceNotification(reason: String, repentanceIntent: Intent) {
+    private fun showRepentanceNotification(repentanceIntent: Intent) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
@@ -335,6 +342,7 @@ class MonitoringService : Service() {
         stopCooldown()
         unregisterScreenReceiver()
         scope.cancel()
+        isRunning = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }

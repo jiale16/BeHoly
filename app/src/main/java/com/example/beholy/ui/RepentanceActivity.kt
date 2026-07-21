@@ -1,5 +1,7 @@
 package com.example.beholy.ui
 
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -48,6 +50,12 @@ class RepentanceActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_repentance)
+
+        // 悔改页已在前台：取消可能残留的警示通知，避免与弹窗重复停留在通知栏
+        runCatching {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.cancel(Constants.HIT_NOTIFICATION_ID)
+        }
 
         val btnRepent = findViewById<Button>(R.id.btn_repent)
         val btnClose = findViewById<Button>(R.id.btn_close)

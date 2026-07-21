@@ -2,6 +2,7 @@ package com.example.beholy.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -9,6 +10,7 @@ import com.example.beholy.data.Constants
 import com.example.beholy.data.DetectionResult
 import com.example.beholy.data.SensitiveWordDictionary
 import com.example.beholy.detection.TierClassifier
+import com.example.beholy.ui.AccessibilityGuardActivity
 import com.example.beholy.detection.text.TextDetector
 import com.example.beholy.util.DisposalExecutor
 import com.example.beholy.util.HitLogger
@@ -90,6 +92,15 @@ class BeHolyAccessibilityService : AccessibilityService() {
         // 会从本应用自身的窗口（如显示敏感词的「悔改提醒页」）误命中自己。
         if (pkg == packageName || effectivePkg == packageName) return
 
+        // ★ 无障碍关闭劝诫守卫：服务已开启时，若用户打开系统设置的无障碍页面
+        // （意图关闭本服务），弹劝诫警告，在「动手前」给一个转向神的停顿。
+        // 必须在下方「系统/白名单跳过」之前拦截——否则 com.android.settings
+        // 会被 SKIP_PACKAGE_PREFIXES 直接跳过，无法进入检测。
+        if (isSettingsPackage(pkg) || isSettingsPackage(effectivePkg)) {
+            tryDetectAccessibilityOffIntent()
+            return
+        }
+
         // 跳过系统应用与用户配置的白名单包名。
         // 同样需对 effectivePkg 一并判断，原因同上。
         if (Constants.SKIP_PACKAGE_PREFIXES.any { pkg.startsWith(it) || effectivePkg.startsWith(it) }) return
@@ -159,6 +170,12 @@ class BeHolyAccessibilityService : AccessibilityService() {
         // 无障碍服务被系统中断时无需特殊处理
     }
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        // 服务被系统禁用：仅取消协程作用域，不再记录关闭事件
+        scope.cancel()
+        return super.onUnbind(intent)
+    }
+
     override fun onDestroy() {
         scope.cancel()
         super.onDestroy()
@@ -181,4 +198,45 @@ class BeHolyAccessibilityService : AccessibilityService() {
     /** 由命中词构造悔改页展示文案。 */
     private fun buildReason(matched: List<String>): String =
         "敏感文字：${matched.joinToString("、")}"
+
+    /**
+     * 判断包名是否为系统设置（意图识别用户打开了设置页去关闭无障碍）。
+     * 覆盖标准包与主流国产 ROM 设置包。
+     */
+    private fun isSettingsPackage(pkg: String): Boolean =
+        pkg == "com.android.settings"
+            || pkg.startsWith("com.android.settings.")
+            || pkg.startsWith("com.samsung.android.settings")
+            || pkg.startsWith("com.miui.settings")
+            || pkg.startsWith("com.coloros.settings")
+            || pkg.startsWith("com.oplus.settings")
+            || pkg.startsWith("com.huawei.settings")
+
+    /**
+     * 无障碍关闭劝诫守卫核心：
+     * 仅在设置页确实列出了本服务（页面文本含「BeHoly」）时才弹警告，
+     * 避免普通设置页误触发。冷却由 [MonitorState] 控制，防止事件风暴反复弹出。
+     */
+    private fun tryDetectAccessibilityOffIntent() {
+        if (!MonitorState.shouldShowA11yGuard()) return
+
+        val root = rootInActiveWindow ?: return
+        val texts = mutableListOf<String>()
+        try {
+            collectText(root, texts)
+        } finally {
+            root.recycle()
+        }
+
+        // 仅当无障碍设置页列出了本服务（用户正准备关闭）才提醒
+        if (!texts.any { it.contains("BeHoly", ignoreCase = true) }) return
+
+        MonitorState.markA11yGuardShown()
+        InAppLogger.w("检测到用户打开无障碍设置，弹出关闭劝诫警告")
+
+        val intent = Intent(this, AccessibilityGuardActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { startActivity(intent) }
+    }
 }

@@ -52,6 +52,16 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
+        <!-- 无障碍关闭劝诫守卫：用户已开启服务却打开设置页意图关闭时弹出，给转向神的停顿 -->
+        <activity
+            android:name=".ui.AccessibilityGuardActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
         <!-- 无障碍检测服务：遍历视图树文本做本地敏感词匹配（替代旧版截屏检测链） -->
         <service
             android:name=".service.BeHolyAccessibilityService"

@@ -2,8 +2,8 @@
     <string name="app_name">BeHoly</string>
     <string name="accessibility_service_desc">BeHoly 通过读取屏幕上显示的文本与内容描述，在设备本地匹配敏感词库，于成人内容出现时引导悔改。所有处理均在本地完成，不会上传任何数据。</string>
     <string name="main_hint">本地离线内容监护（成人文字检测）。基于无障碍服务遍历界面文本，全部在设备本地完成，不上传任何数据。</string>
-    <string name="btn_start">开启监控</string>
-    <string name="btn_stop">停止监控</string>
+    <string name="btn_start">显示每日金句</string>
+    <string name="btn_stop">停止显示</string>
 
     <!-- ===== 无障碍服务引导 ===== -->
     <string name="status_accessibility_on">● 无障碍服务：已开启</string>
@@ -20,8 +20,8 @@
     <!-- 卸载约束提示 -->
     <string name="do_uninstall_hint">注意：一旦配置 Device Owner，正常卸载前需先移除设备所有者（通常需出厂重置或专用命令）。</string>
 
-    <string name="monitor_start">开启监控</string>
-    <string name="monitor_stop">停止监控</string>
+    <string name="monitor_start">显示每日金句</string>
+    <string name="monitor_stop">停止显示</string>
 
     <!-- ===== 悔改反思表单（RepentanceFormActivity） ===== -->
     <string name="form_title">愿主医治这一刻</string>
@@ -55,4 +55,24 @@
         <item>相册</item>
         <item>其他</item>
     </string-array>
+
+    <!-- ===== 无障碍关闭劝诫守卫（AccessibilityGuardActivity） ===== -->
+    <string name="a11y_guard_title">请等一下</string>
+    <string name="a11y_guard_body">你正准备关闭「守望」。\n关闭后，手机将不再为你把关试探。\n\n在神面前诚实问问自己：\n此刻关掉，是出于自由，\n还是正在逃避守望？</string>
+    <string name="a11y_guard_verse">「你们所遇见的试探，无非是人所能受的。神是信实的，必不叫你们受试探过于所能受的；在受试探的时候，总要给你们开一条出路，叫你们能忍受得住。」\n\n—— 哥林多前书 10:13</string>
+    <string name="a11y_guard_btn_keep">我再想想，回到 BeHoly</string>
+    <string name="a11y_guard_btn_close">我仍要关闭</string>
+
+    <!-- ===== 无障碍关闭记录 ===== -->
+    <string name="btn_view_close_records">关闭记录</string>
+    <string name="close_records_title">无障碍关闭记录</string>
+
+    <!-- ===== 悔改日记 ===== -->
+    <string name="btn_view_repentance">悔改日记</string>
+    <string name="repentance_records_title">悔改日记</string>
+    <!-- ===== 悔改记录导出/导入（跨签名保留） ===== -->
+    <string name="btn_export_repentance">导出悔改</string>
+    <string name="btn_import_repentance">导入悔改</string>
+    <string name="export_repentance_title">导出悔改记录</string>
+    <string name="import_repentance_title">导入悔改记录</string>
 </resources>

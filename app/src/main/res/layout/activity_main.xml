@@ -6,16 +6,36 @@
     android:background="#1A1A2E"
     android:padding="16dp">
 
-    <!-- 顶部标题区（连续点击 5 次显示停止按钮） -->
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="wrap_content"
+    <!-- 顶部标题区（连续点击 5 次显示停止按钮）+ 右上角三个点 -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="4dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp">
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+        <Button
+            android:id="@+id/btn_overflow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⋮"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:contentDescription="更多" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
@@ -25,15 +45,33 @@
         android:textColor="#B0B0C0"
         android:layout_marginBottom="12dp" />
 
-    <!-- 开启监控 -->
-    <Button
-        android:id="@+id/btn_start"
+    <!-- 显示每日金句 / 停止显示（并排） -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/btn_start"
-        android:backgroundTint="#27AE60"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="12dp" />
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/btn_start"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_start"
+            android:backgroundTint="#27AE60"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/btn_stop"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_stop"
+            android:backgroundTint="#C0392B"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
 
     <!-- 步骤1：无障碍服务 -->
     <LinearLayout
@@ -71,61 +109,6 @@
             android:textColor="#FFFFFF" />
     </LinearLayout>
 
-    <!-- 步骤2：Device Owner 配置 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#16213E"
-        android:padding="12dp"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="步骤 2 · 配置设备所有者（可选，解锁封禁/锁屏/重启）"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:layout_marginBottom="6dp" />
-
-        <TextView
-            android:id="@+id/tv_device_owner_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/status_device_owner_off"
-            android:textSize="13sp"
-            android:textColor="#E67E22"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btn_configure_device_owner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_configure_device_owner"
-            android:backgroundTint="#0E6391"
-            android:textColor="#FFFFFF" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/do_uninstall_hint"
-            android:textSize="11sp"
-            android:textColor="#B0B0C0"
-            android:layout_marginTop="8dp" />
-    </LinearLayout>
-
-    <!-- 停止监控按钮（默认隐藏，连点标题 5 次后显示） -->
-    <Button
-        android:id="@+id/btn_stop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_stop"
-        android:backgroundTint="#C0392B"
-        android:textColor="#FFFFFF"
-        android:visibility="gone"
-        android:layout_marginBottom="8dp" />
-
     <!-- 查看记录 + 清空日志 -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -153,6 +136,26 @@
             android:textColor="#FFFFFF"
             android:layout_marginStart="6dp" />
     </LinearLayout>
+
+    <!-- 悔改日记 -->
+    <Button
+        android:id="@+id/btn_view_repentance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_view_repentance"
+        android:backgroundTint="#34495E"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 悔改记录导出（跨签名 / 换机保留，无需权限） -->
+    <Button
+        android:id="@+id/btn_export_repentance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_export_repentance"
+        android:backgroundTint="#34495E"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="8dp" />
 
     <!-- 日志标签 -->
     <TextView
