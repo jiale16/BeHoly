@@ -273,6 +273,8 @@ class MonitoringService : Service() {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setSound(null)
             .setVibrate(null)
+            // 前台时也立即显示常驻通知，避免被 Android 12+ 的 FGS 通知延迟策略压住
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
 

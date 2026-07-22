@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
@@ -23,6 +24,7 @@ import com.example.beholy.service.MonitoringService
 import com.example.beholy.util.HitLogger
 import com.example.beholy.util.InAppLogger
 import com.example.beholy.util.RepentanceStore
+import com.example.beholy.util.StreakStore
 
 /**
  * 主界面。
@@ -41,8 +43,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvLog: TextView
     private lateinit var logScroll: ScrollView
     private lateinit var tvAccessibilityStatus: TextView
+    private lateinit var tvStep1Title: TextView
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
+    private lateinit var btnOpenAccessibility: Button
+    private lateinit var tvStreak: TextView
+    private lateinit var tvStreakSub: TextView
+    private lateinit var logContainer: LinearLayout
+    private lateinit var tvLogTitle: TextView
+    private var logsVisible: Boolean = true
+    private var logsExpanded: Boolean = false
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -91,16 +101,31 @@ class MainActivity : AppCompatActivity() {
         permissionHelper = PermissionHelper(this)
 
         tvAccessibilityStatus = findViewById(R.id.tv_accessibility_status)
+        tvStep1Title = findViewById(R.id.tv_step1_title)
         btnStart = findViewById(R.id.btn_start)
         btnStop = findViewById(R.id.btn_stop)
         val btnViewRecords = findViewById<Button>(R.id.btn_view_records)
         val btnViewRepentance = findViewById<Button>(R.id.btn_view_repentance)
         val btnExportRepentance = findViewById<Button>(R.id.btn_export_repentance)
-        val btnClearLog = findViewById<Button>(R.id.btn_clear_log)
-        val btnOpenAccessibility = findViewById<Button>(R.id.btn_open_accessibility)
+        btnOpenAccessibility = findViewById(R.id.btn_open_accessibility)
         val btnOverflow = findViewById<Button>(R.id.btn_overflow)
         tvLog = findViewById(R.id.tv_log)
         logScroll = findViewById(R.id.log_scroll)
+        tvStreak = findViewById(R.id.tv_streak)
+        tvStreakSub = findViewById(R.id.tv_streak_sub)
+        logContainer = findViewById(R.id.log_container)
+        tvLogTitle = findViewById(R.id.tv_log_title)
+        tvLogTitle.setOnClickListener { toggleLogCollapse() }
+
+        // 日志显隐偏好（默认显示；「关闭日志」后持久隐藏）
+        logsVisible = getSharedPreferences("beholy_ui", MODE_PRIVATE)
+            .getBoolean("logs_visible", true)
+        applyLogVisibility()
+        // 日志默认折叠，点击标题展开；菜单「显示日志」会展开
+        if (!logsExpanded) {
+            logScroll.visibility = View.GONE
+            tvLogTitle.text = "📜 实时日志 ▼"
+        }
 
         btnStart.setOnClickListener {
             InAppLogger.i("点击「显示每日金句」")
@@ -119,8 +144,6 @@ class MainActivity : AppCompatActivity() {
 
         btnExportRepentance.setOnClickListener { exportRepentance() }
 
-        btnClearLog.setOnClickListener { InAppLogger.clear() }
-
         btnOpenAccessibility.setOnClickListener {
             permissionHelper.openAccessibilitySettings(this)
         }
@@ -137,6 +160,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // 每次返回前台刷新权限状态（无障碍/DO 可能已在设置页变更）
         refreshPermissionStatus()
+        updateStreakDisplay()
         // 同步金句按钮状态（服务可能在后台仍运行）
         updateVerseButtons(MonitoringService.isRunning)
     }
@@ -149,12 +173,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (!permissionHelper.hasNotificationPermission()) {
+            InAppLogger.i("未授予通知权限，请求授权…")
             notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
             return
         }
         MonitoringService.start(this)
         updateVerseButtons(running = true)
-        InAppLogger.i("已请求启动监控（前台常驻 + 无障碍检测）")
+        InAppLogger.i("已开启每日金句常驻通知（前台服务已启动）")
     }
 
     /** 收起每日金句：停止前台常驻服务（无障碍检测仍由系统按其生命周期管理）。 */
@@ -171,12 +196,17 @@ class MainActivity : AppCompatActivity() {
     /** 刷新无障碍状态指示（Device Owner 状态收进右上角三个点菜单）。 */
     private fun refreshPermissionStatus() {
         val a11y = permissionHelper.isAccessibilityEnabled(this)
+        // 无障碍开启时，确保今天计入连胜（打开 App 即视为受守护的一天）
+        if (a11y) StreakStore.recordActiveToday(this)
         tvAccessibilityStatus.text =
             if (a11y) getString(R.string.status_accessibility_on)
             else getString(R.string.status_accessibility_off)
         tvAccessibilityStatus.setTextColor(
             if (a11y) Color.parseColor("#27AE60") else Color.parseColor("#E74C3C")
         )
+        // 已开启无障碍则隐藏「步骤1 去开启」标题与「去开启」按钮，避免冗余入口；关闭时才展示引导
+        tvStep1Title.visibility = if (a11y) View.GONE else View.VISIBLE
+        btnOpenAccessibility.visibility = if (a11y) View.GONE else View.VISIBLE
     }
 
     /** 弹出 Device Owner 配置提示（含 adb 命令，可复制）。 */
@@ -187,6 +217,18 @@ class MainActivity : AppCompatActivity() {
             .setMessage("${getString(R.string.do_adb_command)}\n\n$cmd")
             .setPositiveButton("复制并关闭") { _, _ -> copyToClipboard(cmd) }
             .setNegativeButton("关闭", null)
+            .show()
+    }
+
+    /** 关于弹窗：展示原主界面顶部那句应用介绍，并附版本号（运行时从 PackageManager 读取）。 */
+    private fun showAboutDialog() {
+        val versionName = runCatching {
+            packageManager.getPackageInfo(packageName, 0).versionName
+        }.getOrDefault("")
+        AlertDialog.Builder(this)
+            .setTitle(R.string.about_title)
+            .setMessage("${getString(R.string.main_hint)}\n\n版本 $versionName")
+            .setPositiveButton("关闭", null)
             .show()
     }
 
@@ -250,10 +292,66 @@ class MainActivity : AppCompatActivity() {
                     showDeviceOwnerDialog()
                     true
                 }
+                R.id.action_show_log -> {
+                    setLogsVisible(true)
+                    true
+                }
+                R.id.action_hide_log -> {
+                    setLogsVisible(false)
+                    true
+                }
+                R.id.action_about -> {
+                    showAboutDialog()
+                    true
+                }
                 else -> false
             }
         }
         popup.show()
+    }
+
+    /** 连胜展示：大幅、喜庆、鼓励。0 天引导重新开始。 */
+    private fun updateStreakDisplay() {
+        val s = StreakStore.getStreak(this)
+        if (s <= 0) {
+            tvStreak.text = "✨ 今天重新开始"
+            tvStreakSub.text = "开启守望，迈出第一步"
+            tvStreak.setTextColor(Color.parseColor("#2E7D32"))
+        } else {
+            val emoji = when {
+                s >= 30 -> "🏆"
+                s >= 7 -> "🔥"
+                else -> "🌱"
+            }
+            tvStreak.text = "$emoji 连续守护 $s 天"
+            tvStreakSub.text = "你做得很好，继续向前 💪"
+            tvStreak.setTextColor(Color.parseColor("#C9971B"))
+        }
+    }
+
+    /** 折叠/展开日志区（仅整体可见时有效）。 */
+    private fun toggleLogCollapse() {
+        if (!logsVisible) return
+        logsExpanded = !logsExpanded
+        logScroll.visibility = if (logsExpanded) View.VISIBLE else View.GONE
+        tvLogTitle.text = if (logsExpanded) "📜 实时日志 ▲" else "📜 实时日志 ▼"
+    }
+
+    private fun applyLogVisibility() {
+        logContainer.visibility = if (logsVisible) View.VISIBLE else View.GONE
+    }
+
+    /** 菜单控制：显示/关闭整个日志区；显示时自动展开。 */
+    private fun setLogsVisible(visible: Boolean) {
+        logsVisible = visible
+        getSharedPreferences("beholy_ui", MODE_PRIVATE).edit()
+            .putBoolean("logs_visible", visible).apply()
+        applyLogVisibility()
+        if (visible) {
+            logsExpanded = true
+            logScroll.visibility = View.VISIBLE
+            tvLogTitle.text = "📜 实时日志 ▲"
+        }
     }
 
     private fun refreshLog() {

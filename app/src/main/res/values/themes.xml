@@ -4,5 +4,10 @@
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryDark">@color/purple_700</item>
         <item name="colorAccent">@color/teal_200</item>
+        <!-- 浅色柔和主题：状态栏/导航栏改为浅色，并让系统图标（时间/电量）转为深色以保证可读 -->
+        <item name="android:statusBarColor">#F7F5FB</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#F7F5FB</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

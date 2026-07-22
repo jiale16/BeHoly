@@ -75,4 +75,10 @@
     <string name="btn_import_repentance">导入悔改</string>
     <string name="export_repentance_title">导出悔改记录</string>
     <string name="import_repentance_title">导入悔改记录</string>
+
+    <!-- ===== 日志显隐菜单 ===== -->
+    <string name="menu_show_log">显示日志</string>
+    <string name="menu_hide_log">关闭日志</string>
+    <string name="menu_about">关于</string>
+    <string name="about_title">关于 BeHoly</string>
 </resources>

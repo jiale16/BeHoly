@@ -13,7 +13,7 @@ import java.util.Locale
  *
  * 文件位置：应用私有存储 /detection_log.txt
  * 格式：每行一条，`时间 | 类型 | 详情`
- * 类型：启动监控、停止监控、检测命中
+ * 类型：启动监控、停止监控、检测命中、无障碍开启、无障碍关闭
  */
 object HitLogger {
 

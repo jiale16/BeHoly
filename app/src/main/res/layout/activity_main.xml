@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1A1A2E"
+    android:background="#F7F5FB"
     android:padding="16dp">
 
     <!-- 顶部标题区（连续点击 5 次显示停止按钮）+ 右上角三个点 -->
@@ -22,7 +22,7 @@
             android:text="@string/app_name"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="#2D2A3A" />
 
         <Button
             android:id="@+id/btn_overflow"
@@ -30,20 +30,43 @@
             android:layout_height="wrap_content"
             android:text="⋮"
             android:textSize="24sp"
-            android:textColor="#FFFFFF"
+            android:textColor="#2D2A3A"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:contentDescription="更多" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- 连胜天数（大号、喜庆、鼓励） -->
+    <LinearLayout
+        android:id="@+id/streak_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/main_hint"
-        android:textSize="12sp"
-        android:textColor="#B0B0C0"
-        android:layout_marginBottom="12dp" />
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#FFF3D6"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tv_streak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✨ 今天重新开始"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            android:textColor="#FFD700"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/tv_streak_sub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开启守望，迈出第一步"
+            android:textSize="13sp"
+            android:textColor="#E0C060"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
 
     <!-- 显示每日金句 / 停止显示（并排） -->
     <LinearLayout
@@ -78,17 +101,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#16213E"
+        android:background="#EEF2FB"
         android:padding="12dp"
         android:layout_marginBottom="8dp">
 
         <TextView
+            android:id="@+id/tv_step1_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="步骤 1 · 开启无障碍服务"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="#2D2A3A"
             android:layout_marginBottom="6dp" />
 
         <TextView
@@ -109,33 +133,15 @@
             android:textColor="#FFFFFF" />
     </LinearLayout>
 
-    <!-- 查看记录 + 清空日志 -->
-    <LinearLayout
+    <!-- 查看记录 -->
+    <Button
+        android:id="@+id/btn_view_records"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
-
-        <Button
-            android:id="@+id/btn_view_records"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="查看记录"
-            android:backgroundTint="#34495E"
-            android:textColor="#FFFFFF"
-            android:layout_marginEnd="6dp" />
-
-        <Button
-            android:id="@+id/btn_clear_log"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="清空日志"
-            android:backgroundTint="#34495E"
-            android:textColor="#FFFFFF"
-            android:layout_marginStart="6dp" />
-    </LinearLayout>
+        android:text="查看记录"
+        android:backgroundTint="#34495E"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="8dp" />
 
     <!-- 悔改日记 -->
     <Button
@@ -157,35 +163,48 @@
         android:textColor="#FFFFFF"
         android:layout_marginBottom="8dp" />
 
-    <!-- 日志标签 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="━━━ 实时日志 ━━━"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="4dp" />
-
-    <!-- 日志显示区：可滚动 -->
-    <ScrollView
-        android:id="@+id/log_scroll"
+    <!-- 日志区（可折叠 + 菜单显隐） -->
+    <LinearLayout
+        android:id="@+id/log_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="#0F1626"
-        android:padding="8dp">
+        android:orientation="vertical"
+        android:layout_marginBottom="8dp">
 
         <TextView
-            android:id="@+id/tv_log"
+            android:id="@+id/tv_log_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textSize="11sp"
-            android:textColor="#A8E6A0"
-            android:textIsSelectable="true"
-            android:lineSpacingExtra="2dp"
-            android:text="" />
+            android:text="📜 实时日志 ▼"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#2D2A3A"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginBottom="4dp" />
 
-    </ScrollView>
+        <!-- 日志显示区：可滚动（默认折叠，点击标题展开） -->
+        <ScrollView
+            android:id="@+id/log_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#F4F1E8"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/tv_log"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textSize="11sp"
+                android:textColor="#2E7D32"
+                android:textIsSelectable="true"
+                android:lineSpacingExtra="2dp"
+                android:text="" />
+        </ScrollView>
+    </LinearLayout>
 </LinearLayout>

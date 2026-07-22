@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1A1A2E"
+    android:background="#F7F5FB"
     android:fillViewport="true">
 
     <LinearLayout
@@ -19,7 +19,7 @@
             android:text="@string/form_title"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#F0E68C"
+            android:textColor="#C9971B"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="12dp" />
 
@@ -31,7 +31,7 @@
             android:gravity="center"
             android:text="@string/form_since_last_prefix"
             android:textSize="14sp"
-            android:textColor="#AAAAAA"
+            android:textColor="#607D8B"
             android:layout_marginBottom="12dp" />
 
         <!-- 本次命中信息（id：tv_hit_info；类型来自 EXTRA_REASON，时间由 hitTime 格式化） -->
@@ -49,7 +49,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#333355"
+            android:background="#D0D0D0"
             android:layout_marginBottom="16dp" />
 
         <!-- 感受心情（多选） -->
@@ -59,7 +59,7 @@
             android:text="@string/form_label_mood"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#EEEEEE"
+            android:textColor="#2D2A3A"
             android:layout_marginBottom="8dp" />
 
         <!-- 多选容器：工程未依赖 Material，由 Activity 动态添加 CheckBox 代替 ChipGroup -->
@@ -77,9 +77,9 @@
             android:hint="@string/form_hint_mood_note"
             android:inputType="textMultiLine"
             android:minLines="1"
-            android:backgroundTint="#555577"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888899"
+            android:backgroundTint="#B0BEC5"
+            android:textColor="#2D2A3A"
+            android:textColorHint="#90A4AE"
             android:layout_marginBottom="16dp" />
 
         <!-- 看的方法（多选，决策1） -->
@@ -89,7 +89,7 @@
             android:text="@string/form_label_method"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#EEEEEE"
+            android:textColor="#2D2A3A"
             android:layout_marginBottom="8dp" />
 
         <LinearLayout
@@ -106,9 +106,9 @@
             android:hint="@string/form_hint_method_note"
             android:inputType="textMultiLine"
             android:minLines="1"
-            android:backgroundTint="#555577"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888899"
+            android:backgroundTint="#B0BEC5"
+            android:textColor="#2D2A3A"
+            android:textColorHint="#90A4AE"
             android:layout_marginBottom="16dp" />
 
         <!-- 反思 -->
@@ -118,7 +118,7 @@
             android:text="@string/form_label_reflection"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#EEEEEE"
+            android:textColor="#2D2A3A"
             android:layout_marginBottom="8dp" />
 
         <EditText
@@ -129,9 +129,9 @@
             android:inputType="textMultiLine"
             android:minLines="3"
             android:gravity="top"
-            android:backgroundTint="#555577"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888899"
+            android:backgroundTint="#B0BEC5"
+            android:textColor="#2D2A3A"
+            android:textColorHint="#90A4AE"
             android:layout_marginBottom="16dp" />
 
         <!-- 以后的避免方案 -->
@@ -141,7 +141,7 @@
             android:text="@string/form_label_avoidance"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#EEEEEE"
+            android:textColor="#2D2A3A"
             android:layout_marginBottom="8dp" />
 
         <EditText
@@ -152,9 +152,9 @@
             android:inputType="textMultiLine"
             android:minLines="3"
             android:gravity="top"
-            android:backgroundTint="#555577"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#888899"
+            android:backgroundTint="#B0BEC5"
+            android:textColor="#2D2A3A"
+            android:textColorHint="#90A4AE"
             android:layout_marginBottom="24dp" />
 
         <!-- 底部按钮区：保存并交托 / 暂不记录 -->
@@ -175,8 +175,8 @@
             android:layout_height="48dp"
             android:text="@string/form_btn_skip"
             android:textSize="15sp"
-            android:backgroundTint="#555555"
-            android:textColor="#CCCCCC" />
+            android:backgroundTint="#B0BEC5"
+            android:textColor="#37474F" />
 
     </LinearLayout>
 </ScrollView>

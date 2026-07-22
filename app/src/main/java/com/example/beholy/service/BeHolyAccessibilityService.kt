@@ -16,6 +16,7 @@ import com.example.beholy.util.DisposalExecutor
 import com.example.beholy.util.HitLogger
 import com.example.beholy.util.InAppLogger
 import com.example.beholy.util.MonitorState
+import com.example.beholy.util.StreakStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -76,6 +77,10 @@ class BeHolyAccessibilityService : AccessibilityService() {
         // 提前异步加载敏感词库，避免首个事件因词库未就绪而漏检
         scope.launch { SensitiveWordDictionary.load(this@BeHolyAccessibilityService) }
         InAppLogger.i("BeHoly 无障碍服务已连接")
+        // 记录无障碍权限「开启」到监控记录（用户开启本服务时触发）
+        HitLogger.log(this, "无障碍开启")
+        // 连胜：今天被视为受守护的一天（连续或重新开始）
+        StreakStore.recordActiveToday(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -171,7 +176,11 @@ class BeHolyAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        // 服务被系统禁用：仅取消协程作用域，不再记录关闭事件
+        // 服务被系统禁用：记录无障碍权限「关闭」到监控记录，再取消协程作用域
+        HitLogger.log(this, "无障碍关闭")
+        // 连胜中断：用户关闭守护，连胜清零
+        StreakStore.breakStreak(this)
+        InAppLogger.i("BeHoly 无障碍服务已断开（用户关闭）")
         scope.cancel()
         return super.onUnbind(intent)
     }
