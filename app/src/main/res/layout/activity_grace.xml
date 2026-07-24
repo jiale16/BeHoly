@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F7F5FB"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="32dp">
+
+        <!-- 恩典标题 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🕊 恩典时刻"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#27AE60"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 安慰经文：约壹 1:9 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#E8F5E9"
+            android:padding="20dp"
+            android:text="「我们若认自己的罪，神是信实的，是公义的，必要赦免我们的罪，洗净我们一切的不义。」\n\n—— 约翰一书 1:9"
+            android:textSize="17sp"
+            android:textStyle="italic"
+            android:textColor="#2E7D32"
+            android:lineSpacingExtra="6dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 得胜天数 -->
+        <TextView
+            android:id="@+id/tv_streak_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="今天是得胜的第 1 天"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#C9971B"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 鼓励语 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="你已回转，神必赦免。\n继续前行，恩典够你用。"
+            android:textSize="16sp"
+            android:textColor="#37474F"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="60dp"
+            android:layout_height="2dp"
+            android:background="#27AE60"
+            android:layout_marginBottom="28dp" />
+
+        <!-- 关闭按钮 -->
+        <Button
+            android:id="@+id/btn_close"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="阿们，继续前行"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="#27AE60"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+</ScrollView>

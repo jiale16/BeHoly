@@ -13,6 +13,11 @@
         android:id="@+id/action_hide_log"
         android:title="@string/menu_hide_log" />
 
+    <!-- 导出悔改记录（从主界面按钮移入此处） -->
+    <item
+        android:id="@+id/action_export_repentance"
+        android:title="@string/btn_export_repentance" />
+
     <!-- 关于：应用介绍（原主界面顶部一句介绍移至此处） -->
     <item
         android:id="@+id/action_about"

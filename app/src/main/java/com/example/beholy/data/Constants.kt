@@ -52,7 +52,9 @@ object Constants {
         "com.meizu.assistant",
         "com.meizu.sceneinfo",
         "com.tencent.wetype",      // ← 新增
-        "com.meizu.suggestion"     // ← 新增
+        "com.meizu.suggestion",    // ← 新增
+        "com.meizu.mstore",        // ← 魅族应用商店内不触发敏感词检测
+        "com.meizu.net.pedometer"  // ← 魅族计步器
     )
 
     /**
@@ -65,10 +67,30 @@ object Constants {
         "bible"
     )
 
+    /**
+     * 强制检测名单（即便匹配上方跳过规则，也仍要检测）。
+     * 浏览器能访问任意网页，是高危场景，绝不能因「com.android 系统应用前缀」被跳过。
+     * 默认包含 AOSP 浏览器 com.android.browser 与 Chrome com.android.chrome；
+     * 如设备自带浏览器是其他包名（如魅族 com.meizu.media.browser），
+     * 在此追加即可，无需改动跳过逻辑。
+     */
+    val FORCE_DETECT_PACKAGE_NAMES: Set<String> = setOf(
+        "com.android.browser",
+        "com.android.chrome"
+    )
+
     // ===== 通知 =====
     const val NOTIFICATION_CHANNEL_ID: String = "beholy_monitor_channel"
-    const val NOTIFICATION_ID: Int = 1001
+    /** 前台服务常驻通知 ID（金句） */
+    const val NOTIFICATION_DAILY_ID: Int = 1001
+    /** 前台服务警示通知 ID（悔改/处置期间使用，与金句分开避免覆盖） */
+    const val NOTIFICATION_ALERT_ID: Int = 1003
+    /** Hit 兜底通知 ID（ repentance 兜底 FullScreenIntent ） */
     const val HIT_NOTIFICATION_ID: Int = 1002
+
+    /** 金句通知开关持久化：仅用户主动点击「显示每日金句」后才允许显示金句通知 */
+    const val PREFS_MONITOR: String = "beholy_monitor"
+    const val KEY_DAILY_ENABLED: String = "daily_enabled"
 
     // ===== 悔改链路透传 extra（沿用既有，禁止改动 key） =====
     const val EXTRA_REASON: String = "extra_reason"

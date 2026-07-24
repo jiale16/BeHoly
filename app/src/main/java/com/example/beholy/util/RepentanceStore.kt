@@ -146,7 +146,7 @@ object RepentanceStore {
         sb.append("共 ${list.size} 次回转\n\n")
         list.forEachIndexed { idx, r ->
             val time = sdf.format(Date(r.createdAt))
-            sb.append("${idx + 1}. [$time] ${r.reason}\n")
+            sb.append("${idx + 1}. [$time] ${MaskUtils.maskReason(r.reason)}\n")
             if (r.mood.isNotEmpty()) sb.append("   心情：${r.mood.joinToString("、")}\n")
             if (r.moodNote.isNotBlank()) sb.append("   ${r.moodNote}\n")
             if (r.method.isNotEmpty()) sb.append("   途径：${r.method.joinToString("、")}\n")

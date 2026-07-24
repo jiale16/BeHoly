@@ -15,6 +15,7 @@ import com.example.beholy.R
 import com.example.beholy.data.Constants
 import com.example.beholy.data.RepentanceRecord
 import com.example.beholy.util.RepentanceStore
+import com.example.beholy.service.MonitoringService
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -98,7 +99,11 @@ class RepentanceFormActivity : AppCompatActivity() {
         // 保存 / 跳过
         findViewById<Button>(R.id.btn_save).setOnClickListener { onSave() }
         // 决策2：跳过不保存，直接关闭
-        findViewById<Button>(R.id.btn_skip).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btn_skip).setOnClickListener {
+            // 跳过悔改流程也结束，恢复金句通知
+            MonitoringService.restoreNotification(this)
+            finish()
+        }
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -164,7 +169,12 @@ class RepentanceFormActivity : AppCompatActivity() {
         )
         lifecycleScope.launch {
             RepentanceStore.save(this@RepentanceFormActivity, record)
-            // 保存即交托：写完即交托给神，关闭表单回到原 App
+            // 保存成功后跳转恩典页，给用户一个「蒙赦免、重新起步」的安慰时刻
+            val graceIntent = Intent(this@RepentanceFormActivity, GraceActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+            runCatching { startActivity(graceIntent) }
+            // 恩典页已启动（或启动失败安全降级），关闭表单
             finish()
         }
     }

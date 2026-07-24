@@ -52,6 +52,15 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
+        <!-- 恩典闭环页：悔改保存后显示安慰经文+得胜天数，闭合属灵循环 -->
+        <activity
+            android:name=".ui.GraceActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
         <!-- 无障碍关闭劝诫守卫：用户已开启服务却打开设置页意图关闭时弹出，给转向神的停顿 -->
         <activity
             android:name=".ui.AccessibilityGuardActivity"

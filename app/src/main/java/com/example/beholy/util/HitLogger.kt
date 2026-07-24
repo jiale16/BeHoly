@@ -50,6 +50,26 @@ object HitLogger {
         }
     }
 
+    /**
+     * 读取记录并按时间戳倒序返回（最新一条在最上面）。
+     * 所有类型（启动监控/停止监控/检测命中/无障碍开启/无障碍关闭/处置完成）都在同一文件，
+     * 统一按每条首部的时间戳排序，保证无障碍记录与检测命中在同一列表、同时间序交织。
+     */
+    fun readLatestFirst(context: Context): String {
+        val raw = read(context)
+        if (raw.isBlank()) return ""
+        return raw.trim().lineSequence()
+            .filter { it.isNotBlank() }
+            .sortedByDescending { parseTs(it) }
+            .joinToString("\n")
+    }
+
+    /** 从单行记录中解析时间戳（行首 `yyyy-MM-dd HH:mm:ss`）。解析失败兜底为 0。 */
+    private fun parseTs(line: String): Long {
+        val ts = line.substringBefore(" | ").trim()
+        return runCatching { timeFmt.parse(ts)?.time ?: 0L }.getOrDefault(0L)
+    }
+
     /** 获取命中次数（只统计"检测命中"类型的行） */
     fun hitCount(context: Context): Int {
         return try {

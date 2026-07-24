@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.text.method.LinkMovementMethod
+import android.text.util.Linkify
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -20,6 +22,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.beholy.R
+import com.example.beholy.data.Constants
 import com.example.beholy.service.MonitoringService
 import com.example.beholy.util.HitLogger
 import com.example.beholy.util.InAppLogger
@@ -51,7 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvStreakSub: TextView
     private lateinit var logContainer: LinearLayout
     private lateinit var tvLogTitle: TextView
-    private var logsVisible: Boolean = true
+    private var logsVisible: Boolean = false
     private var logsExpanded: Boolean = false
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -106,7 +109,6 @@ class MainActivity : AppCompatActivity() {
         btnStop = findViewById(R.id.btn_stop)
         val btnViewRecords = findViewById<Button>(R.id.btn_view_records)
         val btnViewRepentance = findViewById<Button>(R.id.btn_view_repentance)
-        val btnExportRepentance = findViewById<Button>(R.id.btn_export_repentance)
         btnOpenAccessibility = findViewById(R.id.btn_open_accessibility)
         val btnOverflow = findViewById<Button>(R.id.btn_overflow)
         tvLog = findViewById(R.id.tv_log)
@@ -117,9 +119,8 @@ class MainActivity : AppCompatActivity() {
         tvLogTitle = findViewById(R.id.tv_log_title)
         tvLogTitle.setOnClickListener { toggleLogCollapse() }
 
-        // 日志显隐偏好（默认显示；「关闭日志」后持久隐藏）
-        logsVisible = getSharedPreferences("beholy_ui", MODE_PRIVATE)
-            .getBoolean("logs_visible", true)
+        // 启动默认隐藏日志；仅用户点击「显示日志」后才展示（不恢复上次状态）
+        logsVisible = false
         applyLogVisibility()
         // 日志默认折叠，点击标题展开；菜单「显示日志」会展开
         if (!logsExpanded) {
@@ -141,8 +142,6 @@ class MainActivity : AppCompatActivity() {
         btnViewRecords.setOnClickListener { showRecords() }
 
         btnViewRepentance.setOnClickListener { showRepentanceRecords() }
-
-        btnExportRepentance.setOnClickListener { exportRepentance() }
 
         btnOpenAccessibility.setOnClickListener {
             permissionHelper.openAccessibilitySettings(this)
@@ -184,6 +183,11 @@ class MainActivity : AppCompatActivity() {
 
     /** 收起每日金句：停止前台常驻服务（无障碍检测仍由系统按其生命周期管理）。 */
     private fun stopMonitor() {
+        // 关闭金句开关：下次服务启动不会再擅自显示金句通知
+        runCatching {
+            getSharedPreferences(Constants.PREFS_MONITOR, MODE_PRIVATE)
+                .edit().putBoolean(Constants.KEY_DAILY_ENABLED, false).apply()
+        }
         stopService(Intent(this, MonitoringService::class.java))
     }
 
@@ -220,14 +224,29 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    /** 关于弹窗：展示原主界面顶部那句应用介绍，并附版本号（运行时从 PackageManager 读取）。 */
+    /** 关于弹窗：展示应用介绍、版本号，并附 GitHub Release 下载链接（可点击打开）。 */
     private fun showAboutDialog() {
         val versionName = runCatching {
             packageManager.getPackageInfo(packageName, 0).versionName
         }.getOrDefault("")
+        val releaseUrl = "https://github.com/jiale16/BeHoly/releases"
+        val buildTime = getString(R.string.build_time)
+        val msg = "${getString(R.string.main_hint)}\n\n版本 $versionName\n构建时间：$buildTime\n\n下载最新版：$releaseUrl"
+
+        val tv = TextView(this).apply {
+            text = msg
+            textSize = 15f
+            setTextColor(Color.parseColor("#2D2A3A"))
+            setPadding((24 * resources.displayMetrics.density).toInt(), (16 * resources.displayMetrics.density).toInt(),
+                (24 * resources.displayMetrics.density).toInt(), (8 * resources.displayMetrics.density).toInt())
+            autoLinkMask = Linkify.WEB_URLS
+            linksClickable = true
+            movementMethod = LinkMovementMethod.getInstance()
+        }
+
         AlertDialog.Builder(this)
             .setTitle(R.string.about_title)
-            .setMessage("${getString(R.string.main_hint)}\n\n版本 $versionName")
+            .setView(tv)
             .setPositiveButton("关闭", null)
             .show()
     }
@@ -240,10 +259,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 显示命中记录 */
+    /** 显示监控记录：无障碍开关与检测命中同处一表，按时间戳倒序（最新在最上面）。 */
     private fun showRecords() {
         val hits = HitLogger.hitCount(this)
-        val records = HitLogger.read(this)
+        val records = HitLogger.readLatestFirst(this)
         val content = if (records.isBlank()) {
             "暂无记录"
         } else {
@@ -293,11 +312,19 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.action_show_log -> {
+                    InAppLogger.setEnabled(true)
+                    InAppLogger.i("日志已开启，开始记录")
                     setLogsVisible(true)
                     true
                 }
                 R.id.action_hide_log -> {
                     setLogsVisible(false)
+                    InAppLogger.clear()
+                    InAppLogger.setEnabled(false)
+                    true
+                }
+                R.id.action_export_repentance -> {
+                    exportRepentance()
                     true
                 }
                 R.id.action_about -> {
@@ -314,8 +341,8 @@ class MainActivity : AppCompatActivity() {
     private fun updateStreakDisplay() {
         val s = StreakStore.getStreak(this)
         if (s <= 0) {
-            tvStreak.text = "✨ 今天重新开始"
-            tvStreakSub.text = "开启守望，迈出第一步"
+            tvStreak.text = "✨ 今天迈出得胜第一步"
+            tvStreakSub.text = "开启守望，神与你同在"
             tvStreak.setTextColor(Color.parseColor("#2E7D32"))
         } else {
             val emoji = when {
@@ -323,8 +350,8 @@ class MainActivity : AppCompatActivity() {
                 s >= 7 -> "🔥"
                 else -> "🌱"
             }
-            tvStreak.text = "$emoji 连续守护 $s 天"
-            tvStreakSub.text = "你做得很好，继续向前 💪"
+            tvStreak.text = "$emoji 已连续得胜 $s 天"
+            tvStreakSub.text = "持守到底，继续向前 💪"
             tvStreak.setTextColor(Color.parseColor("#C9971B"))
         }
     }

@@ -153,16 +153,6 @@
         android:textColor="#FFFFFF"
         android:layout_marginBottom="8dp" />
 
-    <!-- 悔改记录导出（跨签名 / 换机保留，无需权限） -->
-    <Button
-        android:id="@+id/btn_export_repentance"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_export_repentance"
-        android:backgroundTint="#34495E"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="8dp" />
-
     <!-- 日志区（可折叠 + 菜单显隐） -->
     <LinearLayout
         android:id="@+id/log_container"

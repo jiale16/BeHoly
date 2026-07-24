@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.Properties
 
 plugins {
@@ -13,8 +16,14 @@ android {
         applicationId = "com.example.beholy"
         minSdk = 29
         targetSdk = 34
-        versionCode = 5
-        versionName = "2.3"
+        versionCode = 6
+        versionName = "2.4"
+
+        // 构建日期（编译开始时生成，供「关于」页展示）。使用 resValue 而非 BuildConfig，
+        // 因本项目 BuildConfig 在 AGP8 下引用不稳定。
+        val buildTime = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            .format(Date())
+        resValue("string", "build_time", buildTime)
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

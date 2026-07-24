@@ -20,6 +20,14 @@ object InAppLogger {
     private val deque = ConcurrentLinkedDeque<String>()
     private val timeFmt = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
 
+    /** 是否记录内存日志：默认关闭，用户点击「显示日志」后才开启 */
+    @Volatile
+    private var enabled = false
+
+    fun setEnabled(on: Boolean) {
+        enabled = on
+    }
+
     /** 外部可注册的回调，用于 UI 刷新通知 */
     @Volatile
     var onUpdate: (() -> Unit)? = null
@@ -58,13 +66,16 @@ object InAppLogger {
 
     private fun append(level: String, msg: String) {
         val line = "${now()} [$level] $msg"
-        deque.addLast(line)
-        while (deque.size > MAX_LINES) {
-            deque.pollFirst()
+        // 仅当「显示日志」开启后才写入内存日志（启动默认不记录）
+        if (enabled) {
+            deque.addLast(line)
+            while (deque.size > MAX_LINES) {
+                deque.pollFirst()
+            }
+            onUpdate?.invoke()
         }
-        onUpdate?.invoke()
 
-        // ★ 如果是错误级别，同时写入文件持久化（崩溃后可查）
+        // ★ 如果是错误级别，同时写入文件持久化（崩溃后可查，不受显示开关影响）
         if (level == "E") {
             try {
                 val dir = java.io.File(System.getProperty("java.io.tmpdir") ?: "/tmp")

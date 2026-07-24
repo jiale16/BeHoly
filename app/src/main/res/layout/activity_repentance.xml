@@ -10,7 +10,10 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center_horizontal"
-        android:padding="32dp">
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="24dp">
 
         <!-- 警示标题 -->
         <TextView
@@ -20,7 +23,7 @@
             android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="#E74C3C"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp" />
 
         <!-- 提示语 -->
@@ -75,29 +78,30 @@
             android:textSize="16sp"
             android:textColor="#2D2A3A"
             android:lineSpacingExtra="6dp"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="24dp" />
 
-        <!-- 确认按钮：我愿意悔改 -->
+        <!-- 确认按钮：我愿意悔改（突出、引导优先点击） -->
         <Button
             android:id="@+id/btn_repent"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="60dp"
             android:text="我愿意悔改归向神"
-            android:textSize="18sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:backgroundTint="#27AE60"
             android:textColor="#FFFFFF"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp" />
 
-        <!-- 关闭按钮 -->
+        <!-- 关闭按钮（弱化：小、淡，降低视觉权重，引导用户优先悔改） -->
         <Button
             android:id="@+id/btn_close"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
             android:text="返回 BeHoly"
-            android:textSize="15sp"
-            android:backgroundTint="#B0BEC5"
-            android:textColor="#37474F" />
+            android:textSize="13sp"
+            android:backgroundTint="#ECEFF1"
+            android:textColor="#B0BEC5" />
 
     </LinearLayout>
 </ScrollView>

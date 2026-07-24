@@ -10,6 +10,7 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.example.beholy.R
 import com.example.beholy.data.Constants
+import com.example.beholy.service.MonitoringService
 import com.example.beholy.util.InAppLogger
 
 /**
@@ -51,10 +52,11 @@ class RepentanceActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_repentance)
 
-        // 悔改页已在前台：取消可能残留的警示通知，避免与弹窗重复停留在通知栏
+        // 悔改页已在前台：取消可能残留的警示通知（含兜底 FullScreenIntent 通知），避免与弹窗重复停留在通知栏
         runCatching {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.cancel(Constants.HIT_NOTIFICATION_ID)
+            nm.cancel(Constants.NOTIFICATION_ALERT_ID)
         }
 
         val btnRepent = findViewById<Button>(R.id.btn_repent)
@@ -77,6 +79,8 @@ class RepentanceActivity : AppCompatActivity() {
 
         btnClose.setOnClickListener {
             InAppLogger.i("用户点击「返回 BeHoly」")
+            // 悔改流程结束（用户选择关闭）：恢复金句通知
+            MonitoringService.restoreNotification(this)
             finishAndGoHome()
         }
 

@@ -15,6 +15,7 @@ import com.example.beholy.detection.text.TextDetector
 import com.example.beholy.util.DisposalExecutor
 import com.example.beholy.util.HitLogger
 import com.example.beholy.util.InAppLogger
+import com.example.beholy.util.MaskUtils
 import com.example.beholy.util.MonitorState
 import com.example.beholy.util.StreakStore
 import kotlinx.coroutines.CoroutineScope
@@ -106,11 +107,18 @@ class BeHolyAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 跳过系统应用与用户配置的白名单包名。
-        // 同样需对 effectivePkg 一并判断，原因同上。
-        if (Constants.SKIP_PACKAGE_PREFIXES.any { pkg.startsWith(it) || effectivePkg.startsWith(it) }) return
-        if (pkg in Constants.SKIP_PACKAGE_NAMES || effectivePkg in Constants.SKIP_PACKAGE_NAMES) return
-        if (Constants.SKIP_PACKAGE_CONTAINS.any { pkg.contains(it, ignoreCase = true) || effectivePkg.contains(it, ignoreCase = true) }) return
+        // ★ 强制检测名单（浏览器等高危应用）：即便匹配下方系统/白名单跳过规则，也仍要检测。
+        // 否则 com.android.browser 会因其「com.android 系统前缀」被一并跳过，导致浏览器失守。
+        val forceDetect = pkg in Constants.FORCE_DETECT_PACKAGE_NAMES
+                || effectivePkg in Constants.FORCE_DETECT_PACKAGE_NAMES
+
+        if (!forceDetect) {
+            // 跳过系统应用与用户配置的白名单包名。
+            // 同样需对 effectivePkg 一并判断，原因同上。
+            if (Constants.SKIP_PACKAGE_PREFIXES.any { pkg.startsWith(it) || effectivePkg.startsWith(it) }) return
+            if (pkg in Constants.SKIP_PACKAGE_NAMES || effectivePkg in Constants.SKIP_PACKAGE_NAMES) return
+            if (Constants.SKIP_PACKAGE_CONTAINS.any { pkg.contains(it, ignoreCase = true) || effectivePkg.contains(it, ignoreCase = true) }) return
+        }
 
         // 词库未就绪：触发加载后本事件跳过（下一个事件即可命中）
         if (!SensitiveWordDictionary.isLoaded) {
@@ -150,7 +158,7 @@ class BeHolyAccessibilityService : AccessibilityService() {
             val reason = buildReason(matched)
 
             HitLogger.log(this, "检测命中")
-            InAppLogger.w("检测到命中：包=$effectivePkg 等级=T$tier 词=${matched.joinToString("、")}")
+            InAppLogger.w("检测到命中：包=$effectivePkg 等级=T$tier 词=${matched.joinToString("、", transform = { MaskUtils.maskWord(it) })}")
 
             val result = DetectionResult(
                 timestamp = System.currentTimeMillis(),
@@ -204,9 +212,9 @@ class BeHolyAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** 由命中词构造悔改页展示文案。 */
+    /** 由命中词构造悔改页展示文案（命中词做掩码，只留首字）。 */
     private fun buildReason(matched: List<String>): String =
-        "敏感文字：${matched.joinToString("、")}"
+        "敏感文字：${matched.joinToString("、", transform = { MaskUtils.maskWord(it) })}"
 
     /**
      * 判断包名是否为系统设置（意图识别用户打开了设置页去关闭无障碍）。
