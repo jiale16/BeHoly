@@ -259,34 +259,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 显示监控记录：无障碍开关与检测命中同处一表，按时间戳倒序（最新在最上面）。 */
+    /** 打开检测命中统计页面：按天/周/月查看命中次数柱状图和列表 */
     private fun showRecords() {
-        val hits = HitLogger.hitCount(this)
-        val records = HitLogger.readLatestFirst(this)
-        val content = if (records.isBlank()) {
-            "暂无记录"
-        } else {
-            "命中 $hits 次\n\n$records"
-        }
-        AlertDialog.Builder(this)
-            .setTitle("监控记录")
-            .setMessage(content)
-            .setPositiveButton("关闭", null)
-            .show()
+        startActivity(Intent(this, com.example.beholy.ui.stats.DetectionStatsActivity::class.java))
     }
 
-    /** 显示悔改日记（用户历次回转的结构化反思，本地查看、不联网）。 */
+    /** 打开回转记录查看页（整页卡片列表，替代原纯文本弹窗）。 */
     private fun showRepentanceRecords() {
-        lifecycleScope.launch {
-            val content = RepentanceStore.toReadableText(this@MainActivity)
-            withContext(Dispatchers.Main) {
-                AlertDialog.Builder(this@MainActivity)
-                    .setTitle(R.string.repentance_records_title)
-                    .setMessage(content)
-                    .setPositiveButton("关闭", null)
-                    .show()
-            }
-        }
+        startActivity(Intent(this, RepentanceListActivity::class.java))
     }
 
     /** 导出悔改记录：通过系统文件选择器（SAF）写入用户自选位置（无需存储权限，跨卸载保留）。 */

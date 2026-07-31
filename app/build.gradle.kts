@@ -16,8 +16,8 @@ android {
         applicationId = "com.example.beholy"
         minSdk = 29
         targetSdk = 34
-        versionCode = 6
-        versionName = "2.4"
+        versionCode = 8
+        versionName = "2.5"
 
         // 构建日期（编译开始时生成，供「关于」页展示）。使用 resValue 而非 BuildConfig，
         // 因本项目 BuildConfig 在 AGP8 下引用不稳定。
@@ -109,6 +109,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
     implementation("androidx.activity:activity-ktx:1.8.0")
+    // 每日统计页 ViewPager2（日/周/月 Tab 滑动）
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
 
     // ===== 仪表化测试（instrumented）依赖：QA 为「悔改反思日志」测试新增 =====
     // 仅用于本地连接真机/模拟器执行 ./gradlew connectedAndroidTest，不进入 release 包。

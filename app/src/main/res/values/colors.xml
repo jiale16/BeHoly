@@ -4,4 +4,19 @@
     <color name="teal_200">#03DAC5</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- ===== 回转记录页（BeHoly 语义色，零新依赖） ===== -->
+    <color name="beholy_page_bg">#F3F0EA</color>
+    <color name="beholy_card_bg">#FFFFFF</color>
+    <color name="beholy_card_border">#E6E0D6</color>
+    <color name="beholy_text_primary">#2D2A3A</color>
+    <color name="beholy_text_secondary">#8A8478</color>
+    <!-- 左侧色条/类型徽标：成人画面(暖红) / 敏感文字(橙) / 两者(紫) -->
+    <color name="beholy_bar_adult">#E57373</color>
+    <color name="beholy_bar_text">#F0A030</color>
+    <color name="beholy_bar_both">#B07CC6</color>
+    <color name="beholy_accent">#C9971B</color>
+    <color name="beholy_chip_bg">#F1ECE2</color>
+    <color name="beholy_chip_text">#6B6356</color>
+    <color name="beholy_overview_bg">#FFFFFF</color>
 </resources>

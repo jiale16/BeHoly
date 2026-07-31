@@ -67,14 +67,31 @@
     <string name="btn_view_close_records">关闭记录</string>
     <string name="close_records_title">无障碍关闭记录</string>
 
-    <!-- ===== 悔改日记 ===== -->
-    <string name="btn_view_repentance">悔改日记</string>
-    <string name="repentance_records_title">悔改日记</string>
+    <!-- ===== 回转记录（查看页，原「悔改日记」改名，避免暗示每日记录） ===== -->
+    <string name="btn_view_repentance">回转记录</string>
+    <string name="repentance_records_title">回转记录</string>
+    <string name="repentance_list_title">回转记录</string>
+    <string name="repentance_list_subtitle">每一次软弱后的回转，都是恩典的记号</string>
+    <string name="repentance_overview_total">回转次数</string>
+    <string name="repentance_overview_streak">连续守护</string>
+    <string name="repentance_overview_recent">最近回转</string>
+    <string name="repentance_overview_days">天</string>
+    <string name="repentance_empty_title">暂无回转记录</string>
+    <string name="repentance_empty_hint">愿意在软弱时停下来的那一刻，就是恩典的开始。</string>
+    <string name="repentance_label_reason">类型</string>
+    <string name="repentance_label_mood">心情</string>
+    <string name="repentance_label_method">途径</string>
+    <string name="repentance_label_reflection">反思</string>
+    <string name="repentance_label_avoidance">以后避免</string>
+    <string name="repentance_label_mood_note">心语</string>
+    <string name="repentance_label_method_note">说明</string>
+    <string name="repentance_detail_title">回转详情</string>
+    <string name="repentance_btn_close">关闭</string>
     <!-- ===== 悔改记录导出/导入（跨签名保留） ===== -->
-    <string name="btn_export_repentance">导出悔改</string>
-    <string name="btn_import_repentance">导入悔改</string>
-    <string name="export_repentance_title">导出悔改记录</string>
-    <string name="import_repentance_title">导入悔改记录</string>
+    <string name="btn_export_repentance">导出回转</string>
+    <string name="btn_import_repentance">导入回转</string>
+    <string name="export_repentance_title">导出回转记录</string>
+    <string name="import_repentance_title">导入回转记录</string>
 
     <!-- ===== 日志显隐菜单 ===== -->
     <string name="menu_show_log">显示日志</string>

@@ -94,6 +94,18 @@
                 android:value="BeHoly 离线监护与悔改引导" />
         </service>
 
+        <!-- 检测命中统计页面：查看按天/周/月的命中次数统计 -->
+        <activity
+            android:name=".ui.stats.DetectionStatsActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"/>
+
+        <!-- 回转记录查看页：整页卡片列表替代原「悔改日记」纯文本弹窗 -->
+        <activity
+            android:name=".ui.RepentanceListActivity"
+            android:exported="false"
+            android:excludeFromRecents="true" />
+
         <!-- Device Owner 接收器：adb 一次性 set-device-owner 激活后，方可执行封禁/锁屏/重启 -->
         <receiver
             android:name=".ui.BeHolyAdminReceiver"

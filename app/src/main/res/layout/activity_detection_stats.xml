@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/white"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="←"
+            android:textSize="24sp"
+            android:background="?attr/selectableItemBackground"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:gravity="center"
+            android:textColor="#2D2A3A"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="检测命中统计"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#2D2A3A"
+            android:gravity="start"/>
+
+    </LinearLayout>
+
+    <!-- Tab 切换按钮组 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#F5F5F5"
+        android:padding="4dp">
+
+        <Button
+            android:id="@+id/tabDaily"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="按天"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackground"
+            android:stateListAnimator="@null"
+            android:textColor="@android:color/black"
+            android:buttonTint="@android:color/holo_blue_dark"/>
+
+        <Button
+            android:id="@+id/tabWeekly"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="按周"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackground"
+            android:stateListAnimator="@null"
+            android:textColor="@android:color/black"
+            android:buttonTint="@android:color/holo_blue_dark"/>
+
+        <Button
+            android:id="@+id/tabMonthly"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="按月"
+            android:textSize="14sp"
+            android:background="?attr/selectableItemBackground"
+            android:stateListAnimator="@null"
+            android:textColor="@android:color/black"
+            android:buttonTint="@android:color/holo_blue_dark"/>
+    </LinearLayout>
+
+    <!-- ViewPager2 显示 Fragment 内容 -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</LinearLayout>

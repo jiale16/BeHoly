@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 图表提示 -->
+        <TextView
+            android:id="@+id/tvChartHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="暂无数据"
+            android:textColor="#999999"
+            android:textAlignment="center"
+            android:visibility="gone"
+            android:layout_marginTop="48dp"/>
+
+        <!-- 柱状图区域 -->
+        <LinearLayout
+            android:id="@+id/layoutChart"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:orientation="horizontal"
+            android:gravity="bottom"
+            android:background="#F5F5F5"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:id="@+id/layoutChartContent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="bottom"
+                android:paddingStart="24dp"/>
+
+        </LinearLayout>
+
+        <!-- Y轴最大值标注 -->
+        <TextView
+            android:id="@+id/tvChartMax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#999999"
+            android:gravity="end"
+            android:paddingEnd="8dp"
+            android:layout_marginBottom="-8dp"/>
+
+
+        <!-- 命中列表区域 -->
+        <LinearLayout
+            android:id="@+id/layoutList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="检测命中详情"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#2D2A3A"
+                android:paddingBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHitsContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#444444"
+                android:fontFamily="monospace"
+                android:lineSpacingExtra="2dp"
+                android:paddingBottom="16dp"
+                android:background="#F5F5F5"
+                android:padding="8dp"/>
+
+        </LinearLayout>
+
+        <!-- 空状态提示（当无命中记录时） -->
+        <TextView
+            android:id="@+id/tvEmptyHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="暂无命中记录"
+            android:textColor="#999999"
+            android:textAlignment="center"
+            android:layout_marginTop="48dp"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+</ScrollView>
