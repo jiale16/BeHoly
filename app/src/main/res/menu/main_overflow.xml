@@ -5,6 +5,11 @@
         android:id="@+id/action_device_owner"
         android:title="@string/btn_configure_device_owner" />
 
+    <!-- 悬浮窗权限：悔改页从后台弹出的必要权限，未授权时用户可从此处重新授权 -->
+    <item
+        android:id="@+id/action_overlay_permission"
+        android:title="@string/menu_overlay_permission" />
+
     <!-- 日志显隐：整体显示/关闭实时日志区 -->
     <item
         android:id="@+id/action_show_log"

@@ -1,25 +1,39 @@
 package com.example.beholy.ui.stats
 
 import android.os.Bundle
-import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.example.beholy.R
-import com.example.beholy.util.HitLogger
+import com.example.beholy.data.db.AppDatabase
+import com.example.beholy.data.db.DateCount
+import com.example.beholy.data.db.HitRecordEntity
 import com.example.beholy.databinding.ActivityDetectionStatsBinding
 import com.example.beholy.ui.stats.statsfrag.DailyStatsFragment
 import com.example.beholy.ui.stats.statsfrag.MonthlyStatsFragment
 import com.example.beholy.ui.stats.statsfrag.WeeklyStatsFragment
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
  * 检测命中统计页面：按天/周/月查看命中次数柱状图 + 列表
+ *
+ * 数据源：Room 数据库 hit_records 表（旧版从 HitLogger 文本文件解析，已迁移）。
+ * 聚合按天在 DB 层用 SQLite strftime 完成；按周/月在内存中基于按天结果二次聚合。
  */
 class DetectionStatsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetectionStatsBinding
     private lateinit var statsAdapter: StatsPagerAdapter
+
+    /** 命中列表行的展示格式（行首必须为 `yyyy-MM-dd HH:mm:ss`，DailyStatsFragment 按行首日期过滤当周命中） */
+    private val displayFmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
+    /** 用于按天分组计算「第N次」的日期格式 */
+    private val dateFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +50,9 @@ class DetectionStatsActivity : AppCompatActivity() {
         statsAdapter = StatsPagerAdapter(this)
         binding.viewPager.adapter = statsAdapter
         binding.viewPager.offscreenPageLimit = 3
+        // 关闭外层横向滑动：避免与「按天」内部按周翻页的横向滑动冲突，
+        // 日/周/月 Tab 仍可通过顶部按钮点击切换。
+        binding.viewPager.isUserInputEnabled = false
 
         // 加载数据
         loadAllStats()
@@ -85,84 +102,69 @@ class DetectionStatsActivity : AppCompatActivity() {
         monthlyTab.setOnClickListener { binding.viewPager.currentItem = 2 }
     }
 
+    /**
+     * 从 Room 数据库加载命中记录并聚合统计。
+     * 按天聚合在 DB 层完成（SQLite strftime），按周/月在内存中基于按天结果二次聚合。
+     */
     private fun loadAllStats() {
-        val hitsContent = HitLogger.readLatestFirst(this)
-        if (hitsContent.isBlank()) {
-            statsAdapter.updateData(
-                dailyStat = emptyList(),
-                weeklyStat = emptyList(),
-                monthlyStat = emptyList(),
-                allHits = emptyList()
-            )
-            return
-        }
+        lifecycleScope.launch {
+            val dao = AppDatabase.get(this@DetectionStatsActivity).hitDao()
 
-        // 解析所有命中记录的时间戳
-        val hitDates = parseHitDates(hitsContent)
+            // DB 层按天聚合
+            val dailyRaw = withContext(Dispatchers.IO) { dao.aggregateByDay() }
 
-        // 聚合统计
-        val dailyStat = aggregateByDay(hitDates)
-        val weeklyStat = aggregateByWeek(hitDates)
-        val monthlyStat = aggregateByMonth(hitDates)
-
-        // 更新适配器
-        statsAdapter.updateData(
-            dailyStat = dailyStat,
-            weeklyStat = weeklyStat,
-            monthlyStat = monthlyStat,
-            allHits = parseAllHits(hitsContent)
-        )
-    }
-
-    /**
-     * 从 HitLogger 文本中解析出每个命中的日期
-     */
-    private fun parseHitDates(content: String): List<String> {
-        val dates = mutableListOf<String>()
-        val lines = content.trim().lineSequence()
-        for (line in lines) {
-            if (line.contains("| 检测命中")) {
-                val datePart = line.substringBefore(" ").trim()
-                if (datePart.isNotEmpty()) dates.add(datePart)
+            if (dailyRaw.isEmpty()) {
+                statsAdapter.updateData(
+                    dailyStat = emptyList(),
+                    weeklyStat = emptyList(),
+                    monthlyStat = emptyList(),
+                    allHits = emptyList()
+                )
+                return@launch
             }
-        }
-        return dates
-    }
 
-    /**
-     * 按天聚合：每天命中次数
-     */
-    private fun aggregateByDay(dates: List<String>): List<DetectionStatItem> {
-        return dates.groupingBy { it }.eachCount()
-            .map { (date, count) ->
+            // 按天 -> DetectionStatItem
+            val dailyStat = dailyRaw.map {
                 DetectionStatItem(
-                    date = date,
-                    count = count,
+                    date = it.date,
+                    count = it.count,
                     weekStart = null,
-                    month = date.substring(0, 7)
+                    month = it.date.substring(0, 7)
                 )
             }.sortedBy { it.date }
+
+            // 按周/月在内存中二次聚合（避免复杂 SQL，与原实现一致）
+            val weeklyStat = aggregateByWeek(dailyRaw)
+            val monthlyStat = aggregateByMonth(dailyRaw)
+
+            // 全量命中记录（按时间倒序），格式化为可读行供列表展示
+            val allEntities = withContext(Dispatchers.IO) { dao.queryAll() }
+            val allHits = buildHitDisplayList(allEntities)
+
+            statsAdapter.updateData(
+                dailyStat = dailyStat,
+                weeklyStat = weeklyStat,
+                monthlyStat = monthlyStat,
+                allHits = allHits
+            )
+        }
     }
 
     /**
-     * 按周聚合（ISO周）：每周一开始的一周内命中次数
+     * 按周聚合（ISO周）：每周一开始的一周内命中次数。
+     * 基于按天聚合结果在内存中二次聚合，避免在 SQL 中处理 ISO 周复杂度。
+     * date 为该周周一日期；weekStart 与 date 相同；month 为该周周一所在月份。
      */
-    private fun aggregateByWeek(dates: List<String>): List<DetectionStatItem> {
-        val calendar = Calendar.getInstance()
+    private fun aggregateByWeek(dailyCounts: List<DateCount>): List<DetectionStatItem> {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val calendar = Calendar.getInstance().apply { setFirstDayOfWeek(Calendar.MONDAY) }
         val weeklyMap = mutableMapOf<String, Int>()
 
-        for (dateStr in dates) {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            calendar.setTime(sdf.parse(dateStr)!!)
-            calendar.setFirstDayOfWeek(Calendar.MONDAY)
-            val year = calendar.get(Calendar.YEAR)
-
-            // 计算该周的周一日期
-            val monday = calendar.clone() as Calendar
-            monday.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-            val weekKey = sdf.format(monday.time)
-
-            weeklyMap[weekKey] = weeklyMap.getOrDefault(weekKey, 0) + 1
+        for (dc in dailyCounts) {
+            calendar.time = sdf.parse(dc.date)!!
+            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            val weekKey = sdf.format(calendar.time)
+            weeklyMap[weekKey] = weeklyMap.getOrDefault(weekKey, 0) + dc.count
         }
 
         return weeklyMap.map { (date, count) ->
@@ -178,11 +180,11 @@ class DetectionStatsActivity : AppCompatActivity() {
     /**
      * 按月聚合：每月命中次数
      */
-    private fun aggregateByMonth(dates: List<String>): List<DetectionStatItem> {
+    private fun aggregateByMonth(dailyCounts: List<DateCount>): List<DetectionStatItem> {
         val monthlyMap = mutableMapOf<String, Int>()
-        for (dateStr in dates) {
-            val month = dateStr.substring(0, 7)
-            monthlyMap[month] = monthlyMap.getOrDefault(month, 0) + 1
+        for (dc in dailyCounts) {
+            val month = dc.date.substring(0, 7)
+            monthlyMap[month] = monthlyMap.getOrDefault(month, 0) + dc.count
         }
 
         return monthlyMap.map { (month, count) ->
@@ -196,16 +198,46 @@ class DetectionStatsActivity : AppCompatActivity() {
     }
 
     /**
-     * 解析所有命中记录的完整详情（用于列表展示）
+     * 为全量命中记录按「同一天 + 同一包名」分组，按时间升序计算当天第几次命中，
+     * 再倒序返回展示字符串。
+     *
+     * 不再直接复用写入时快照的 [HitRecordEntity.hitCount]，以避免：
+     * - 旧版 detection_log.txt 迁移数据的 hitCount=0 显示成「第0次」；
+     * - 并发写入时两个事件读到相同的 todayCount 导致「第3次」重复；
+     * - 写入时快照错误导致后续记录的序号倒退。
      */
-    private fun parseAllHits(content: String): List<String> {
-        val hits = mutableListOf<String>()
-        val lines = content.trim().lineSequence()
-        for (line in lines) {
-            if (line.contains("| 检测命中")) {
-                hits.add(line.trim())
+    private fun buildHitDisplayList(entities: List<HitRecordEntity>): List<String> {
+        val counts = mutableMapOf<Pair<String, String>, Int>()
+        return entities
+            .sortedBy { it.timestamp } // 升序，保证同天同包按时间递增编号
+            .map { entity ->
+                val date = dateFmt.format(Date(entity.timestamp))
+                val key = date to entity.packageName
+                val count = counts.getOrDefault(key, 0) + 1
+                counts[key] = count
+                formatHit(entity, count)
             }
+            .reversed() // 恢复时间倒序展示
+    }
+
+    /**
+     * 将单条命中记录格式化为可读字符串（供统计页命中列表展示）。
+     * 行首必须为 `yyyy-MM-dd HH:mm:ss`，DailyStatsFragment 依赖此格式按行首日期过滤当周命中。
+     *
+     * @param displayHitCount 由 [buildHitDisplayList] 动态计算的当天同包累计次数（从1开始）
+     */
+    private fun formatHit(entity: HitRecordEntity, displayHitCount: Int): String {
+        val time = displayFmt.format(Date(entity.timestamp))
+        val isMigrated = entity.packageName == "(已迁移)" || entity.tier == 0
+        val pkgDisplay = if (entity.packageName.isBlank() || entity.packageName == "(已迁移)") {
+            ""
+        } else {
+            " 包=${entity.packageName}"
         }
-        return hits
+        return if (isMigrated) {
+            "$time | 检测命中 | 历史记录$pkgDisplay"
+        } else {
+            "$time | 检测命中 | T${entity.tier}$pkgDisplay (第${displayHitCount}次)"
+        }
     }
 }

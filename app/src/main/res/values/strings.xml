@@ -98,4 +98,11 @@
     <string name="menu_hide_log">关闭日志</string>
     <string name="menu_about">关于</string>
     <string name="about_title">关于 BeHoly</string>
+
+    <!-- ===== 悬浮窗权限引导 ===== -->
+    <string name="overlay_permission_title">需要「显示在其他应用上层」权限</string>
+    <string name="overlay_permission_body_a11y_on">您已开启无障碍检测。当检测到不良内容时，BeHoly 需要从后台弹出悔改提醒页面来打断浏览。\n\nAndroid 系统要求授予「显示在其他应用上层」权限才能这样做，否则悔改页可能弹不出来。\n\n请在接下来的设置页中找到并允许 BeHoly 的此权限。</string>
+    <string name="overlay_permission_btn_go">去设置</string>
+    <string name="overlay_permission_btn_later">暂不</string>
+    <string name="menu_overlay_permission">授予悬浮窗权限</string>
 </resources>

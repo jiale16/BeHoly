@@ -6,6 +6,7 @@ import java.util.Properties
 plugins {
     id("com.android.application") version "8.2.2"
     id("org.jetbrains.kotlin.android") version "1.9.22"
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -16,8 +17,8 @@ android {
         applicationId = "com.example.beholy"
         minSdk = 29
         targetSdk = 34
-        versionCode = 8
-        versionName = "2.5"
+        versionCode = 9
+        versionName = "2.6"
 
         // 构建日期（编译开始时生成，供「关于」页展示）。使用 resValue 而非 BuildConfig，
         // 因本项目 BuildConfig 在 AGP8 下引用不稳定。
@@ -44,21 +45,27 @@ android {
         }
         create("release") {
             val keystorePropsFile = rootProject.file("keystore.properties")
-            if (keystorePropsFile.exists()) {
-                val keystoreProps = Properties().apply {
-                    keystorePropsFile.inputStream().use { load(it) }
-                }
-                storeFile = rootProject.file(keystoreProps["STORE_FILE"] as String)
-                storePassword = keystoreProps["STORE_PASSWORD"] as String
-                keyAlias = keystoreProps["KEY_ALIAS"] as String
-                keyPassword = keystoreProps["KEY_PASSWORD"] as String
-            } else {
-                // 回退：复用 debug keystore（仅用于本地无 keystore.properties 时的构建）
-                storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
+            if (!keystorePropsFile.exists()) {
+                // fail-fast:正式分发必须用独立 release keystore,避免误用 debug keystore
+                // 导致被同 debug 签名的任意包覆盖安装。
+                // 本地调试请使用 debug 或 v21 构建类型:./gradlew assembleDebug
+                throw GradleException(
+                    "release 构建需要 keystore.properties 文件用于签名正式包,但该文件不存在。\n" +
+                    "请在项目根目录创建 keystore.properties,内容示例:\n" +
+                    "STORE_FILE=/path/to/your/release.keystore\n" +
+                    "STORE_PASSWORD=your_store_password\n" +
+                    "KEY_ALIAS=your_key_alias\n" +
+                    "KEY_PASSWORD=your_key_password\n\n" +
+                    "若仅用于本地调试构建,请改用 debug 构建类型:./gradlew assembleDebug"
+                )
             }
+            val keystoreProps = Properties().apply {
+                keystorePropsFile.inputStream().use { load(it) }
+            }
+            storeFile = rootProject.file(keystoreProps["STORE_FILE"] as String)
+            storePassword = keystoreProps["STORE_PASSWORD"] as String
+            keyAlias = keystoreProps["KEY_ALIAS"] as String
+            keyPassword = keystoreProps["KEY_PASSWORD"] as String
         }
     }
 
@@ -70,7 +77,12 @@ android {
             isDebuggable = true
         }
         release {
-            isMinifyEnabled = false
+            // 启用 R8 代码压缩 + 资源压缩:
+            // - 裁剪未使用代码与资源,缩小 APK 体积;
+            // - 混淆代码,提高逆向门槛(敏感词库逻辑、处置策略不裸露);
+            // - 保留行号便于崩溃日志定位(见 proguard-rules.pro)。
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -111,6 +123,11 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.0")
     // 每日统计页 ViewPager2（日/周/月 Tab 滑动）
     implementation("androidx.viewpager2:viewpager2:1.1.0")
+
+    // Room：命中记录结构化存储（替代 HitLogger 文本日志的"检测命中"部分）
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // ===== 仪表化测试（instrumented）依赖：QA 为「悔改反思日志」测试新增 =====
     // 仅用于本地连接真机/模拟器执行 ./gradlew connectedAndroidTest，不进入 release 包。

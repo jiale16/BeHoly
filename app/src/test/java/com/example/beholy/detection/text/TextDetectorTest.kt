@@ -83,6 +83,40 @@ class TextDetectorTest {
         assertEquals(listOf("色情"), result)
     }
 
+    // ===== 安全短语豁免（见 Constants.SAFE_PHRASES）=====
+
+    @Test
+    fun detect_safePhrase_exemptsContainedWord() {
+        // 第三方「举报页面」把「色情低俗」作为分类标签整体展示：
+        // 「色情」四个字连写出现于此短语内，应豁免、不命中。
+        val result = TextDetector.detect(
+            listOf("请选择举报理由：色情低俗", "提交举报"),
+            SensitiveWordDictionary
+        )
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun detect_safePhrase_doesNotExemptRealHitOutsidePhrase() {
+        // 同一段文本中，敏感词若出现在安全短语之外（如「色情网站」），仍应命中。
+        val result = TextDetector.detect(
+            listOf("这是一个色情网站，举报理由可选色情低俗"),
+            SensitiveWordDictionary
+        )
+        assertEquals(listOf("色情"), result)
+    }
+
+    @Test
+    fun detect_safePhrase_caseInsensitive() {
+        // 安全短语豁免同样忽略大小写（如「色情低俗」以全角/半角以外的混排极少见，
+        // 此处仅验证命中词本身的大小写不破坏豁免判定）。
+        val result = TextDetector.detect(
+            listOf("举报类型：色情低俗内容"),
+            SensitiveWordDictionary
+        )
+        assertTrue(result.isEmpty())
+    }
+
     // ===== 反射注入已知词库（源码未抽接口，单测注入；已在报告中记录可测性建议）=====
     private fun injectDictionary(words: List<String>) {
         val clazz = SensitiveWordDictionary::class.java

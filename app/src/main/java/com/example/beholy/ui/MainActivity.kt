@@ -162,9 +162,44 @@ class MainActivity : AppCompatActivity() {
         updateStreakDisplay()
         // 同步金句按钮状态（服务可能在后台仍运行）
         updateVerseButtons(MonitoringService.isRunning)
+        // 无障碍已开启后引导悬浮窗权限（检测+处置闭环），与金句功能解耦
+        maybePromptOverlayPermission()
     }
 
-    /** 显示每日金句：先校验无障碍服务，再启动前台常驻服务（常驻通知展示每日金句，并保持进程优先级）。 */
+    /**
+     * 悬浮窗权限引导：无障碍服务已开启（用户同意检测）但悬浮窗未授权且未引导过时，
+     * 弹窗引导授予悬浮窗权限（悔改页从后台弹出的必要条件，是检测后处置的出口）。
+     * 用 [Constants.KEY_OVERLAY_PROMPTED] 标记已引导，避免反复打扰。
+     * 用户拒绝后不再自动弹出，可从右上角菜单「授予悬浮窗权限」手动重新授权。
+     */
+    private fun maybePromptOverlayPermission() {
+        // 无障碍未开启：用户尚未开始检测，不引导悬浮窗
+        if (!permissionHelper.isAccessibilityEnabled(this)) return
+        // 悬浮窗已授权：无需引导
+        if (permissionHelper.hasOverlayPermission()) return
+        // 已引导过：不再自动弹出
+        val prefs = getSharedPreferences(Constants.PREFS_UI, MODE_PRIVATE)
+        if (prefs.getBoolean(Constants.KEY_OVERLAY_PROMPTED, false)) return
+
+        // 标记已引导（无论用户选「去设置」还是「暂不」，都不再自动弹）
+        prefs.edit().putBoolean(Constants.KEY_OVERLAY_PROMPTED, true).apply()
+
+        InAppLogger.w("无障碍已开启但悬浮窗未授权，引导用户授予")
+        AlertDialog.Builder(this)
+            .setTitle(R.string.overlay_permission_title)
+            .setMessage(R.string.overlay_permission_body_a11y_on)
+            .setPositiveButton(R.string.overlay_permission_btn_go) { _, _ ->
+                permissionHelper.openOverlaySettings(this)
+            }
+            .setNegativeButton(R.string.overlay_permission_btn_later) { _, _ ->
+                InAppLogger.w("用户跳过悬浮窗权限授予，悔改页弹出的可靠性将降低")
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /** 显示每日金句：先校验无障碍服务与通知权限，再启动前台常驻服务（常驻通知展示每日金句）。
+     *  悬浮窗权限引导已移至 [maybePromptOverlayPermission]（无障碍开启后触发），与金句功能解耦。 */
     private fun onStartVerseClick() {
         if (!permissionHelper.isAccessibilityEnabled(this)) {
             InAppLogger.w("尚未开启无障碍服务，请先开启")
@@ -274,21 +309,31 @@ class MainActivity : AppCompatActivity() {
         exportDocLauncher.launch("beholy_repentance_backup.jsonl")
     }
 
-    /** 右上角三个点菜单：步骤2（Device Owner 配置）收于此，避免干扰大多数无法设置的用户。 */
+    /** 右上角三个点菜单：Device Owner 配置、悬浮窗权限、日志显隐等收于此，避免干扰主流程。 */
     private fun showOverflowMenu() {
         val anchor = findViewById<View>(R.id.btn_overflow)
         val popup = PopupMenu(this, anchor)
         popup.menuInflater.inflate(R.menu.main_overflow, popup.menu)
-        val item = popup.menu.findItem(R.id.action_device_owner)
-        item.title = if (permissionHelper.isDeviceOwner(this)) {
+        // Device Owner 动态标题
+        popup.menu.findItem(R.id.action_device_owner).title = if (permissionHelper.isDeviceOwner(this)) {
             "设备所有者：已配置 ✓"
         } else {
             getString(R.string.btn_configure_device_owner)
+        }
+        // 悬浮窗权限动态标题：已授权时标注，便于用户确认状态
+        popup.menu.findItem(R.id.action_overlay_permission).title = if (permissionHelper.hasOverlayPermission()) {
+            "悬浮窗权限：已授予 ✓"
+        } else {
+            getString(R.string.menu_overlay_permission)
         }
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_device_owner -> {
                     showDeviceOwnerDialog()
+                    true
+                }
+                R.id.action_overlay_permission -> {
+                    permissionHelper.openOverlaySettings(this)
                     true
                 }
                 R.id.action_show_log -> {
@@ -367,17 +412,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkCrashLog() {
-        try {
-            val dir = java.io.File(System.getProperty("java.io.tmpdir") ?: "/tmp")
-            val logFile = java.io.File(dir, "beholly_crash.log")
-            if (logFile.exists()) {
-                val content = logFile.readText()
-                if (content.isNotBlank()) {
-                    InAppLogger.e("★★★ 上次崩溃日志 ★★\n$content")
-                    logFile.delete()
-                }
-            }
-        } catch (_: Exception) {
+        // 读取并清除上次崩溃日志(InAppLogger 负责落盘到 cacheDir,路径稳定)
+        val content = InAppLogger.consumeCrashLog()
+        if (content.isNotBlank()) {
+            InAppLogger.e("★★★ 上次崩溃日志 ★★\n$content")
         }
     }
 }

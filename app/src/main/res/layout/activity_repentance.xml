@@ -80,6 +80,20 @@
             android:lineSpacingExtra="6dp"
             android:layout_marginBottom="24dp" />
 
+        <!-- 递进文案：由 RepentanceActivity 按 hitCount 动态设置。
+             第 1-2 次隐藏；第 3-4 次显示「恳切呼召」；第 5+ 次显示「诚实对质」。 -->
+        <TextView
+            android:id="@+id/tv_progression"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:textStyle="italic"
+            android:textColor="#8E6B2C"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
+
         <!-- 确认按钮：我愿意悔改（突出、引导优先点击） -->
         <Button
             android:id="@+id/btn_repent"

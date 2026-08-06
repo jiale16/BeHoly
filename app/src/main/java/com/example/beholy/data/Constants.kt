@@ -20,7 +20,7 @@ object Constants {
     const val SOURCE_PACKAGE: String = "package"
 
     // ===== 冷静期与阈值 =====
-    /** 冷静期时长（毫秒）：Tier2 封禁后的强制反思时长，默认 5 分钟 */
+    /** 冷静期时长（毫秒）：DO 下 Tier2 封禁后的强制反思时长，默认 5 分钟 */
     const val COOLDOWN_PERIOD_MS: Long = 300_000L
 
     /** 同包累计命中达到该次数升级为 Tier2 */
@@ -31,6 +31,46 @@ object Constants {
 
     /** 累计命中统计的时间窗口（毫秒）：超出窗口的命中不计入升级 */
     const val TIER_WINDOW_MS: Long = 600_000L
+
+    /**
+     * 非 DO 下的持续打断时长阶梯（毫秒）：命中后该时长内违规包回前台立刻 HOME。
+     * 由同包累计命中次数驱动，等级递进体现「越陷越深，呼唤越恳切」。
+     * - 第 1-2 次：30 秒——初次跌倒，给一个短暂的打断与悔改呼召
+     * - 第 3-4 次（达 TIER2_HIT_THRESHOLD）：2 分钟——反复跌倒，延长冷静
+     * - 第 5+ 次（达 TIER3_HIT_THRESHOLD）：5 分钟——深陷其中，给足停顿与对质时间
+     *
+     * DO 下不使用此阶梯（DO 走封禁+锁屏，有更强的系统级约束）。
+     */
+    val BLOCK_DURATION_BY_HIT_COUNT: List<Pair<IntRange, Long>> = listOf(
+        1..2 to 30_000L,
+        3..4 to 120_000L,
+        5..Int.MAX_VALUE to 300_000L
+    )
+
+    /**
+     * 悔改页最小停留时长阶梯（毫秒）：悔改页在此时长内「返回 BeHoly」按钮置灰倒计时。
+     * 非 DO 下把「冷静期」从系统锁屏语义转移到 UI 约束——强迫用户停顿悔改，而非立即点掉。
+     * 与 [BLOCK_DURATION_BY_HIT_COUNT] 同步递进。
+     */
+    val MIN_STAY_BY_HIT_COUNT: List<Pair<IntRange, Long>> = listOf(
+        1..2 to 10_000L,
+        3..4 to 30_000L,
+        5..Int.MAX_VALUE to 60_000L
+    )
+
+    /**
+     * 根据同包累计命中次数查询命中次数阶梯表，返回对应档位的值。
+     * 用于 [BLOCK_DURATION_BY_HIT_COUNT] / [MIN_STAY_BY_HIT_COUNT]。
+     * @param hitCount 当前累计命中次数（≥1）
+     * @param ladder 阶梯表（IntRange → 值）
+     * @return 对应档位的值；hitCount<1 时返回阶梯表首档的值
+     */
+    fun resolveFromHitCount(hitCount: Int, ladder: List<Pair<IntRange, Long>>): Long {
+        if (hitCount < 1) return ladder.firstOrNull()?.second ?: 0L
+        return ladder.firstOrNull { hitCount in it.first }?.second
+            ?: ladder.lastOrNull()?.second
+            ?: 0L
+    }
 
     /** Accessibility 同包最小处理间隔（毫秒）：避免事件风暴导致刷屏误命中 */
     const val ACCESSIBILITY_SCAN_THROTTLE_MS: Long = 800L
@@ -92,13 +132,34 @@ object Constants {
     const val PREFS_MONITOR: String = "beholy_monitor"
     const val KEY_DAILY_ENABLED: String = "daily_enabled"
 
+    /** UI 状态持久化（日志显隐、权限引导标记等） */
+    const val PREFS_UI: String = "beholy_ui"
+    /** 悬浮窗权限引导标记：已引导过则不再自动弹出，避免反复打扰。用户可从菜单手动重新授权。 */
+    const val KEY_OVERLAY_PROMPTED: String = "overlay_permission_prompted"
+
     // ===== 悔改链路透传 extra（沿用既有，禁止改动 key） =====
     const val EXTRA_REASON: String = "extra_reason"
     const val EXTRA_HIT_TIME: String = "extra_hit_time"
+    /**
+     * 本次命中的同包累计次数（非 DO 下悔改页强度递进依据）。
+     * 由 [com.example.beholy.util.DisposalExecutor] 写入，透传到 RepentanceActivity。
+     */
+    const val EXTRA_HIT_COUNT: String = "extra_hit_count"
     const val REPENTANCE_FILE: String = "repentance_records.jsonl"
 
     // ===== 词库 =====
     const val SENSITIVE_WORDS_FILE: String = "sensitive_words.txt"
+
+    /**
+     * 连写安全短语豁免：这些短语整体出现时，只是对成人内容的「描述 / 归类」
+     * （如第三方 App 的「举报页面」用「色情低俗」作为分类标签），并非成人内容本身。
+     * 匹配时，若某个敏感词（如「色情」）的【所有】出现位置都落在这类短语区间内，
+     * 才视为豁免，避免子串匹配误报；敏感词若出现在短语之外（如「色情网站」），仍正常命中。
+     * 如需扩充豁免短语，直接在此追加即可，无需改动匹配逻辑。
+     */
+    val SAFE_PHRASES: Set<String> = setOf(
+        "色情低俗"
+    )
 
     // ===== 日志 TAG（供 Logcat 使用） =====
     const val LOG_TAG: String = "BeHoly"

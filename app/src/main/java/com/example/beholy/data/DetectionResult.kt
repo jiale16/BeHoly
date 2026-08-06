@@ -30,7 +30,10 @@ data class DetectionResult(
     /** 聚合的节点文本（便于调试/日志，不用于上传） */
     val recognizedText: String = "",
     /** 供悔改页展示的命中说明 */
-    val reason: String = ""
+    val reason: String = "",
+    /** 同包「今天」累计命中次数（含本次，基于 Room 数据库查询）。
+     *  供悔改页「第 N 次命中」展示与阻断期时长递进使用，跨进程重启不丢失。 */
+    val hitCount: Int = 0
 ) {
     /** 是否为「任一等级」的命中 */
     val isHit: Boolean

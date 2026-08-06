@@ -7,120 +7,143 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.viewpager2.widget.ViewPager2
 import com.example.beholy.R
 import com.example.beholy.ui.stats.DetectionStatItem
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
- * 按天统计 Fragment：展示每日命中次数柱状图 + 命中列表
+ * 按天统计 Fragment：以「周」为单位翻页，默认显示当前周 7 天，左右滑切换周
  */
 class DailyStatsFragment(
     private val statList: List<DetectionStatItem> = emptyList(),
     private val hits: List<String> = emptyList()
 ) : Fragment() {
 
+    private lateinit var weekPager: ViewPager2
+    private lateinit var tvWeekRange: TextView
+    private lateinit var layoutList: LinearLayout
+    private lateinit var tvHitsContent: TextView
+    private lateinit var tvEmptyHint: TextView
+    private lateinit var tvChartHint: TextView
+
+    private var weeks: List<String> = emptyList()
+    private var dateToCount: Map<String, Int> = emptyMap()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.fragment_daily_stats, container, false)
-    }
+    ): View = inflater.inflate(R.layout.fragment_daily_stats, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        renderChart(view)
-        renderList(view)
-    }
 
-    private fun renderChart(view: View) {
-        val layoutChart = view.findViewById<LinearLayout>(R.id.layoutChart)
-        val layoutChartContent = view.findViewById<LinearLayout>(R.id.layoutChartContent)
-        val tvChartHint = view.findViewById<TextView>(R.id.tvChartHint)
-        val chartMax = view.findViewById<TextView>(R.id.tvChartMax)
+        tvChartHint = view.findViewById(R.id.tvChartHint)
+        tvWeekRange = view.findViewById(R.id.tvWeekRange)
+        weekPager = view.findViewById(R.id.weekPager)
+        layoutList = view.findViewById(R.id.layoutList)
+        tvHitsContent = view.findViewById(R.id.tvHitsContent)
+        tvEmptyHint = view.findViewById(R.id.tvEmptyHint)
 
         if (statList.isEmpty()) {
-            layoutChart.visibility = View.GONE
             tvChartHint.visibility = View.VISIBLE
-            return
-        }
-
-        layoutChart.visibility = View.VISIBLE
-        tvChartHint.visibility = View.GONE
-
-        val maxCount = statList.maxOfOrNull { it.count } ?: 1
-        val maxHeight = 160 // dp
-
-        layoutChartContent.removeAllViews()
-
-        for (item in statList) {
-            val barHeight = (maxHeight.toFloat() * item.count / maxCount).toInt()
-            val barView = createBarView(item.date, item.count, barHeight, maxCount)
-            layoutChartContent.addView(barView)
-        }
-
-        chartMax.text = "最高 $maxCount 次"
-    }
-
-    private fun createBarView(date: String, count: Int, height: Int, max: Int): View {
-        val column = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-            setPadding(8, 0, 8, 8)
-        }
-
-        val tvCount = TextView(requireContext()).apply {
-            text = count.toString()
-            textSize = 12f
-            setTextColor(android.graphics.Color.parseColor("#666666"))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setGravity(android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL)
-        }
-
-        val bar = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(40, height)
-            setBackgroundColor(android.graphics.Color.parseColor("#27AE60"))
-            elevation = 2f
-        }
-
-        val tvDate = TextView(requireContext()).apply {
-            text = date.substring(5)
-            textSize = 10f
-            setTextColor(android.graphics.Color.parseColor("#999999"))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setGravity(android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL)
-        }
-
-        column.addView(tvCount)
-        column.addView(bar)
-        column.addView(tvDate)
-
-        return column
-    }
-
-    private fun renderList(view: View) {
-        val layoutList = view.findViewById<LinearLayout>(R.id.layoutList)
-        val tvHitsContent = view.findViewById<TextView>(R.id.tvHitsContent)
-        val tvEmptyHint = view.findViewById<TextView>(R.id.tvEmptyHint)
-
-        if (hits.isEmpty()) {
-            tvEmptyHint.visibility = View.VISIBLE
+            tvWeekRange.visibility = View.GONE
+            weekPager.visibility = View.GONE
             layoutList.visibility = View.GONE
+            tvEmptyHint.visibility = View.GONE
             return
         }
 
-        layoutList.visibility = View.VISIBLE
-        tvEmptyHint.visibility = View.GONE
+        dateToCount = statList.associate { it.date to it.count }
+        weeks = buildWeeks()
+        val defaultIndex = (weeks.size - 1).coerceAtLeast(0)
 
-        val allHitsText = hits.joinToString("\n\n") { it }
-        tvHitsContent.text = allHitsText
+        weekPager.adapter = WeekPagerAdapter(this, weeks, dateToCount)
+        weekPager.offscreenPageLimit = 1
+        weekPager.setCurrentItem(defaultIndex, false)
+        updateWeekInfo(defaultIndex)
+
+        weekPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                updateWeekInfo(position)
+            }
+        })
+    }
+
+    /**
+     * 生成从最早数据所在周 到 本周（含）的所有周一日期列表
+     */
+    private fun buildWeeks(): List<String> {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val cal = Calendar.getInstance().apply { setFirstDayOfWeek(Calendar.MONDAY) }
+        val dates = statList.map { it.date }.sorted()
+        if (dates.isEmpty()) return emptyList()
+
+        val earliest = sdf.parse(dates.first())!!
+        val today = sdf.parse(sdf.format(Date()))!!
+
+        cal.time = earliest
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        val firstMonday = sdf.format(cal.time)
+
+        cal.time = today
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        val currentMonday = sdf.format(cal.time)
+
+        val list = mutableListOf<String>()
+        var cur = sdf.parse(firstMonday)!!
+        val end = sdf.parse(currentMonday)!!
+        while (!cur.after(end)) {
+            list.add(sdf.format(cur))
+            cal.time = cur
+            cal.add(Calendar.DAY_OF_MONTH, 7)
+            cur = cal.time
+        }
+        return list
+    }
+
+    /**
+     * 更新顶部周区间文案 + 底部命中列表（按当前周过滤）
+     */
+    private fun updateWeekInfo(position: Int) {
+        val mondayStr = weeks.getOrNull(position) ?: return
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val rangeFmt = SimpleDateFormat("MM/dd", Locale.getDefault())
+        val cal = Calendar.getInstance().apply {
+            setFirstDayOfWeek(Calendar.MONDAY)
+            time = sdf.parse(mondayStr)!!
+        }
+        val start = cal.time
+        cal.add(Calendar.DAY_OF_MONTH, 6)
+        val end = cal.time
+
+        val todayStr = sdf.format(Date())
+        val containsToday = mondayStr <= todayStr && sdf.format(end) >= todayStr
+        val suffix = if (containsToday) "（本周）" else ""
+        tvWeekRange.text = "${rangeFmt.format(start)} - ${rangeFmt.format(end)} $suffix"
+
+        val weekDates = (0..6).map { off ->
+            val c = Calendar.getInstance().apply {
+                setFirstDayOfWeek(Calendar.MONDAY)
+                time = sdf.parse(mondayStr)!!
+                add(Calendar.DAY_OF_MONTH, off)
+            }
+            sdf.format(c.time)
+        }.toSet()
+
+        val weekHits = hits.filter { line ->
+            weekDates.contains(line.substringBefore(" ").trim())
+        }
+
+        if (weekHits.isEmpty()) {
+            layoutList.visibility = View.GONE
+            tvEmptyHint.visibility = View.VISIBLE
+        } else {
+            layoutList.visibility = View.VISIBLE
+            tvEmptyHint.visibility = View.GONE
+            tvHitsContent.text = weekHits.joinToString("\n\n")
+        }
     }
 }

@@ -41,8 +41,10 @@ class ConstantsTest {
 
     @Test
     fun notificationConstants_areValid() {
-        assertEquals(1001, Constants.NOTIFICATION_ID)
+        // 三个通知 ID 互不相同且为正数(供 MonitoringService 区分金句/警示/兜底)
+        assertEquals(1001, Constants.NOTIFICATION_DAILY_ID)
         assertEquals(1002, Constants.HIT_NOTIFICATION_ID)
+        assertEquals(1003, Constants.NOTIFICATION_ALERT_ID)
         assertTrue(Constants.NOTIFICATION_CHANNEL_ID.isNotEmpty())
     }
 

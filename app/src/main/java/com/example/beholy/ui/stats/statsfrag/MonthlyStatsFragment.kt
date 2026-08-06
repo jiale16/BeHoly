@@ -7,122 +7,99 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.viewpager2.widget.ViewPager2
 import com.example.beholy.R
 import com.example.beholy.ui.stats.DetectionStatItem
 
 /**
- * 按月统计 Fragment：展示每月命中次数柱状图 + 命中列表
+ * 按月统计 Fragment：以「年」为单位翻页，每屏显示某年 12 个月的命中次数柱状图，
+ * 左右滑切换年份，默认定位到最近有数据的年份；底部列表按当前年过滤。
  */
 class MonthlyStatsFragment(
     private val statList: List<DetectionStatItem> = emptyList(),
     private val hits: List<String> = emptyList()
 ) : Fragment() {
 
+    private lateinit var tvChartHint: TextView
+    private lateinit var tvYearTitle: TextView
+    private lateinit var yearPager: ViewPager2
+    private lateinit var layoutList: LinearLayout
+    private lateinit var tvHitsContent: TextView
+    private lateinit var tvEmptyHint: TextView
+
+    private var years: List<String> = emptyList()       // "yyyy"，按有数据的年份排序
+    private var pages: List<BarsPageData> = emptyList()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.fragment_daily_stats, container, false)
-    }
+    ): View = inflater.inflate(R.layout.fragment_monthly_stats, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        renderChart(view)
-        renderList(view)
-    }
 
-    private fun renderChart(view: View) {
-        val layoutChart = view.findViewById<LinearLayout>(R.id.layoutChart)
-        val layoutChartContent = view.findViewById<LinearLayout>(R.id.layoutChartContent)
-        val tvChartHint = view.findViewById<TextView>(R.id.tvChartHint)
-        val chartMax = view.findViewById<TextView>(R.id.tvChartMax)
+        tvChartHint = view.findViewById(R.id.tvChartHint)
+        tvYearTitle = view.findViewById(R.id.tvYearTitle)
+        yearPager = view.findViewById(R.id.yearPager)
+        layoutList = view.findViewById(R.id.layoutList)
+        tvHitsContent = view.findViewById(R.id.tvHitsContent)
+        tvEmptyHint = view.findViewById(R.id.tvEmptyHint)
 
         if (statList.isEmpty()) {
-            layoutChart.visibility = View.GONE
             tvChartHint.visibility = View.VISIBLE
-            return
-        }
-
-        layoutChart.visibility = View.VISIBLE
-        tvChartHint.visibility = View.GONE
-
-        val maxCount = statList.maxOfOrNull { it.count } ?: 1
-        val maxHeight = 160
-
-        layoutChartContent.removeAllViews()
-
-        for (item in statList) {
-            // 月显示格式：MM
-            val label = item.date.substring(5)
-            val barHeight = (maxHeight.toFloat() * item.count / maxCount).toInt()
-            val barView = createBarView(label, item.count, barHeight, maxCount)
-            layoutChartContent.addView(barView)
-        }
-
-        chartMax.text = "最高 $maxCount 次"
-    }
-
-    private fun createBarView(date: String, count: Int, height: Int, max: Int): View {
-        val column = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-            setPadding(8, 0, 8, 8)
-        }
-
-        val tvCount = TextView(requireContext()).apply {
-            text = count.toString()
-            textSize = 12f
-            setTextColor(android.graphics.Color.parseColor("#666666"))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setGravity(android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL)
-        }
-
-        val bar = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(40, height)
-            setBackgroundColor(android.graphics.Color.parseColor("#27AE60"))
-            elevation = 2f
-        }
-
-        val tvDate = TextView(requireContext()).apply {
-            text = date
-            textSize = 10f
-            setTextColor(android.graphics.Color.parseColor("#999999"))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setGravity(android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL)
-        }
-
-        column.addView(tvCount)
-        column.addView(bar)
-        column.addView(tvDate)
-
-        return column
-    }
-
-    private fun renderList(view: View) {
-        val layoutList = view.findViewById<LinearLayout>(R.id.layoutList)
-        val tvHitsContent = view.findViewById<TextView>(R.id.tvHitsContent)
-        val tvEmptyHint = view.findViewById<TextView>(R.id.tvEmptyHint)
-
-        if (hits.isEmpty()) {
-            tvEmptyHint.visibility = View.VISIBLE
+            tvYearTitle.visibility = View.GONE
+            yearPager.visibility = View.GONE
             layoutList.visibility = View.GONE
+            tvEmptyHint.visibility = View.GONE
             return
         }
 
-        layoutList.visibility = View.VISIBLE
-        tvEmptyHint.visibility = View.GONE
+        // 按月聚合数据的 date 字段 = "yyyy-MM"，按年份分组
+        val byYear = statList.groupBy { it.date.substring(0, 4) }
+        years = byYear.keys.sorted()
+        pages = years.map { year ->
+            val countsByMonth = byYear.getValue(year).associate { it.date to it.count }
+            val labels = (1..12).map { "${it}月" }
+            val counts = (1..12).map { m ->
+                val key = "$year-${String.format("%02d", m)}"
+                countsByMonth[key] ?: 0
+            }
+            BarsPageData(labels = labels, counts = counts)
+        }
 
-        val allHitsText = hits.joinToString("\n\n") { it }
-        tvHitsContent.text = allHitsText
+        val defaultIndex = years.size - 1
+
+        yearPager.adapter = BarsPagerAdapter(this, pages)
+        yearPager.offscreenPageLimit = 1
+        yearPager.setCurrentItem(defaultIndex, false)
+        updateYearInfo(defaultIndex)
+
+        yearPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                updateYearInfo(position)
+            }
+        })
+    }
+
+    /**
+     * 更新年份标题 + 底部命中列表（按当前年过滤）
+     */
+    private fun updateYearInfo(position: Int) {
+        val year = years.getOrNull(position) ?: return
+        tvYearTitle.text = "${year}年"
+
+        val yearHits = hits.filter { line ->
+            line.substringBefore(" ").startsWith(year)
+        }
+
+        if (yearHits.isEmpty()) {
+            layoutList.visibility = View.GONE
+            tvEmptyHint.visibility = View.VISIBLE
+        } else {
+            layoutList.visibility = View.VISIBLE
+            tvEmptyHint.visibility = View.GONE
+            tvHitsContent.text = yearHits.joinToString("\n\n")
+        }
     }
 }

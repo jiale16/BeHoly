@@ -40,6 +40,39 @@ class PermissionHelper(private val activity: AppCompatActivity) {
     }
 
     /**
+     * 是否拥有悬浮窗权限（SYSTEM_ALERT_WINDOW）。
+     *
+     * Android 10+ 后台启动 Activity 限制的核心豁免项：无此权限时，
+     * MonitoringService 从后台 startActivity(RepentanceActivity) 会被系统静默拦截，
+     * 导致命中后仅 HOME 回桌面、悔改页弹不出来。
+     * FullScreenIntent 通知在屏幕亮着时也会被降级为普通横幅，不能可靠拉起。
+     * 因此必须在开启金句前引导用户授予此权限。
+     */
+    fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(activity)
+        } else {
+            true
+        }
+    }
+
+    /**
+     * 跳转系统「显示在其他应用上层」设置页，引导用户授予悬浮窗权限。
+     */
+    fun openOverlaySettings(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                android.net.Uri.parse("package:${context.packageName}")
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            runCatching { context.startActivity(intent) }
+                ?: InAppLogger.w("无法跳转悬浮窗权限设置")
+        }
+    }
+
+    /**
      * 无障碍服务是否已启用（本应用对应的 BeHolyAccessibilityService）。
      *
      * 双保险判断：

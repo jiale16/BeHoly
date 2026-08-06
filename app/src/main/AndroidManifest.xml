@@ -33,12 +33,14 @@
             </intent-filter>
         </activity>
 
-        <!-- 悔改提醒界面：检测到成人内容时弹出，打断当前浏览 -->
+        <!-- 悔改提醒界面：检测到成人内容时弹出，打断当前浏览。
+             不用 noHistory：noHistory 会在 Activity 切后台时立即 finish，
+             导致用户从通知点击重新拉起时行为不确定（部分 ROM 不启动）。
+             生命周期由代码中 finish() 控制（btnRepent/btnClose/onBackPressed）。 -->
         <activity
             android:name=".ui.RepentanceActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:noHistory="true"
             android:launchMode="singleTop"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />

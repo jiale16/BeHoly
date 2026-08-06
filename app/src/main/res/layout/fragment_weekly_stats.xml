@@ -20,34 +20,9 @@
             android:visibility="gone"
             android:layout_marginTop="48dp"/>
 
-        <!-- 柱状图区域 -->
-        <LinearLayout
-            android:id="@+id/layoutChart"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/tvChartMax"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#999999"
-                android:gravity="end"
-                android:paddingBottom="4dp"/>
-
-            <LinearLayout
-                android:id="@+id/layoutChartContent"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:orientation="horizontal"
-                android:gravity="bottom"/>
-        </LinearLayout>
-
-        <!-- 当前周区间 -->
+        <!-- 当前月份标题 -->
         <TextView
-            android:id="@+id/tvWeekRange"
+            android:id="@+id/tvMonthTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="15sp"
@@ -56,14 +31,14 @@
             android:gravity="center"
             android:paddingBottom="8dp"/>
 
-        <!-- 按周翻页：每屏显示一周 7 天 -->
+        <!-- 按月翻页：每屏固定显示一个月内的所有周 -->
         <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/weekPager"
+            android:id="@+id/monthPager"
             android:layout_width="match_parent"
             android:layout_height="240dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- 本周命中列表 -->
+        <!-- 本月命中列表 -->
         <LinearLayout
             android:id="@+id/layoutList"
             android:layout_width="match_parent"
@@ -74,7 +49,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="本周检测命中详情"
+                android:text="本月检测命中详情"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#2D2A3A"
@@ -93,12 +68,12 @@
                 android:padding="8dp"/>
         </LinearLayout>
 
-        <!-- 本周无命中 -->
+        <!-- 本月无命中 -->
         <TextView
             android:id="@+id/tvEmptyHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="本周暂无命中记录"
+            android:text="本月暂无命中记录"
             android:textColor="#999999"
             android:textAlignment="center"
             android:layout_marginTop="24dp"
