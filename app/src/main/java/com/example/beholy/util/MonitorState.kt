@@ -41,6 +41,10 @@ object MonitorState {
     @Volatile
     private var blockPackage: String = ""
 
+    /** 非 DO 下的阻断期原始时长（毫秒），供 [renewBlock] 重新计时使用。 */
+    @Volatile
+    private var blockDurationMs: Long = 0L
+
     /**
      * 阻断期保护期到期时间戳：setBlock 后前 [BLOCK_PROTECT_MS] 内不 HOME。
      *
@@ -138,11 +142,22 @@ object MonitorState {
     fun setBlock(ms: Long, pkg: String) {
         val now = System.currentTimeMillis()
         blockPackage = pkg
+        blockDurationMs = ms
         blockUntil = now + ms
         blockProtectUntil = now + BLOCK_PROTECT_MS
         // 互斥：阻断期生效时清除冷静期
         cooldownUntil = 0L
         cooldownPackage = ""
+    }
+
+    /**
+     * 重新计时阻断期：用户在阻断期内再次打开违规应用被 HOME 后调用。
+     * 以原始时长 [blockDurationMs] 重新计算到期时间，让用户每次试图绕过都重新等待完整阻断期。
+     * 不重置保护期（此时悔改页早已稳定，无需保护）。
+     */
+    fun renewBlock() {
+        if (blockDurationMs <= 0L) return
+        blockUntil = System.currentTimeMillis() + blockDurationMs
     }
 
     /**
@@ -157,10 +172,18 @@ object MonitorState {
     /** 若处于阻断期（且已过保护期），返回被阻断的包名；否则返回 null。 */
     fun getBlockPackage(): String? = if (isInBlock()) blockPackage else null
 
+    /** 返回阻断期剩余秒数（未在阻断期时返回 0）。 */
+    fun getBlockRemainingSec(): Long {
+        val now = System.currentTimeMillis()
+        if (now >= blockUntil) return 0L
+        return (blockUntil - now) / 1000
+    }
+
     /** 清除阻断期状态。 */
     fun clearBlock() {
         blockUntil = 0L
         blockPackage = ""
+        blockDurationMs = 0L
         blockProtectUntil = 0L
     }
 
