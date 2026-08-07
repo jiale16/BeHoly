@@ -120,6 +120,16 @@ class RepentanceActivity : AppCompatActivity() {
             // 最小停留期内按钮被置灰，此回调不会触发（isEnabled=false）。双保险：再判一次。
             if (minStayMs > 0L) return@setOnClickListener
             InAppLogger.i("用户点击「返回 BeHoly」")
+            // 直接取消所有悔改相关通知（兜底）：
+            // restoreNotification 是异步的（通过 startForegroundService 发送 intent），
+            // 依赖服务进程存活与 dailyNotificationSuppressed 状态一致。若服务被杀重启，
+            // 状态会重置为 false 导致 restoreDailyNotification 提前 return 不取消通知。
+            // 此处由 Activity 直接 cancel，确保用户离开悔改页时通知立即消失。
+            runCatching {
+                val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                nm.cancel(Constants.HIT_NOTIFICATION_ID)
+                nm.cancel(Constants.NOTIFICATION_ALERT_ID)
+            }
             // 悔改流程结束（用户选择关闭）：恢复金句通知
             MonitoringService.restoreNotification(this)
             finishAndGoHome()
@@ -136,6 +146,11 @@ class RepentanceActivity : AppCompatActivity() {
      */
     private fun applyProgression() {
         val count = pendingHitCount.coerceAtLeast(0)
+
+        // 先清理可能正在跑的倒计时：onNewIntent 在悔改页已前台时再次命中会重复进入本方法，
+        // 若不移除旧 runnable，队列中将累积多个 countdownRunnable 并行执行，
+        // 导致 minStayMs 每秒被减多次，倒计时跑得比实际快（命中次数越多越快）。
+        handler.removeCallbacks(countdownRunnable)
 
         // 递进文案
         when {

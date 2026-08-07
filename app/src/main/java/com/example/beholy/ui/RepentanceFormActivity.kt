@@ -132,7 +132,7 @@ class RepentanceFormActivity : AppCompatActivity() {
             val cb = CheckBox(this).apply {
                 text = opt
                 textSize = 15f
-                setTextColor(getColor(android.R.color.white))
+                setTextColor(getColor(R.color.beholy_text_primary))
                 isChecked = false
             }
             container.addView(cb)

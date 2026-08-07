@@ -17,8 +17,8 @@ android {
         applicationId = "com.example.beholy"
         minSdk = 29
         targetSdk = 34
-        versionCode = 9
-        versionName = "2.6"
+        versionCode = 10
+        versionName = "2.7"
 
         // 构建日期（编译开始时生成，供「关于」页展示）。使用 resValue 而非 BuildConfig，
         // 因本项目 BuildConfig 在 AGP8 下引用不稳定。

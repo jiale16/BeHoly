@@ -198,23 +198,19 @@ class DetectionStatsActivity : AppCompatActivity() {
     }
 
     /**
-     * 为全量命中记录按「同一天 + 同一包名」分组，按时间升序计算当天第几次命中，
+     * 为全量命中记录按「同一天」分组（跨所有应用），按时间升序计算当天第几次命中，
      * 再倒序返回展示字符串。
      *
-     * 不再直接复用写入时快照的 [HitRecordEntity.hitCount]，以避免：
-     * - 旧版 detection_log.txt 迁移数据的 hitCount=0 显示成「第0次」；
-     * - 并发写入时两个事件读到相同的 todayCount 导致「第3次」重复；
-     * - 写入时快照错误导致后续记录的序号倒退。
+     * 悔改次数以当天总命中计，而非按应用分别计数。
      */
     private fun buildHitDisplayList(entities: List<HitRecordEntity>): List<String> {
-        val counts = mutableMapOf<Pair<String, String>, Int>()
+        val counts = mutableMapOf<String, Int>()
         return entities
-            .sortedBy { it.timestamp } // 升序，保证同天同包按时间递增编号
+            .sortedBy { it.timestamp } // 升序，保证同天按时间递增编号
             .map { entity ->
                 val date = dateFmt.format(Date(entity.timestamp))
-                val key = date to entity.packageName
-                val count = counts.getOrDefault(key, 0) + 1
-                counts[key] = count
+                val count = counts.getOrDefault(date, 0) + 1
+                counts[date] = count
                 formatHit(entity, count)
             }
             .reversed() // 恢复时间倒序展示

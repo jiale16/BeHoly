@@ -122,7 +122,10 @@ class BeHolyAccessibilityService : AccessibilityService() {
         val blockPkg = MonitorState.getBlockPackage()
         if (blockPkg != null && (pkg == blockPkg || effectivePkg == blockPkg)) {
             runCatching { performGlobalAction(GLOBAL_ACTION_HOME) }
-            InAppLogger.i("阻断期内违规包回前台,已 HOME:$blockPkg")
+            // 重新计时阻断期：用户每次试图绕过都重新等待完整阻断期，避免「熬过剩余时间即可」
+            MonitorState.renewBlock()
+            val remaining = MonitorState.getBlockRemainingSec()
+            InAppLogger.i("阻断期内违规包回前台,已 HOME 并重新计时:$blockPkg,当前剩余 ${remaining} 秒")
             return  // 不做检测,避免重复触发悔改链路
         }
 
@@ -194,8 +197,9 @@ class BeHolyAccessibilityService : AccessibilityService() {
             // 串行化「查询当天命中数 → 写入命中记录 → 构造 DetectionResult」，
             // 保证并发事件拿到的 hitCount 连续递增， repentance/统计 都使用正确的累计次数。
             val result = hitMutex.withLock {
+                // 悔改次数以当天总命中计（跨所有应用），而非按应用分别计数
                 val todayCount = runCatching {
-                    AppDatabase.get(this).hitDao().countTodayByPackage(effectivePkg)
+                    AppDatabase.get(this).hitDao().countToday()
                 }.getOrDefault(0)
                 val hitCount = todayCount + 1
                 val timestamp = System.currentTimeMillis()

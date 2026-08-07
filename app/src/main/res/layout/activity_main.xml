@@ -151,7 +151,59 @@
         android:text="@string/btn_view_repentance"
         android:backgroundTint="#34495E"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="12dp" />
+
+    <!-- 灵修入口卡片 -->
+    <LinearLayout
+        android:id="@+id/card_devotion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_devotion_card"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📖"
+            android:textSize="28sp"
+            android:layout_marginEnd="14dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="去灵修"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#2D2A3A" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lectio 365 · 每日安静等候神"
+                android:textSize="12sp"
+                android:textColor="#7C6F8A"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="→"
+            android:textSize="20sp"
+            android:textColor="#9B8BB4" />
+    </LinearLayout>
 
     <!-- 日志区（可折叠 + 菜单显隐） -->
     <LinearLayout

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===== 回转记录页（深色模式） ===== -->
+    <color name="beholy_page_bg">#1A1A1F</color>
+    <color name="beholy_card_bg">#2A2A30</color>
+    <color name="beholy_card_border">#3A3A42</color>
+    <color name="beholy_text_primary">#E8E6E0</color>
+    <color name="beholy_text_secondary">#9A958C</color>
+    <color name="beholy_bar_adult">#EF9A9A</color>
+    <color name="beholy_bar_text">#FFB74D</color>
+    <color name="beholy_bar_both">#CE93D8</color>
+    <color name="beholy_accent">#E0B040</color>
+    <color name="beholy_chip_bg">#3A3A42</color>
+    <color name="beholy_chip_text">#C8C2B8</color>
+    <color name="beholy_overview_bg">#2A2A30</color>
+    <color name="beholy_toolbar_bg">#2A2A30</color>
+    <color name="beholy_toolbar_text">#E8E6E0</color>
+
+    <!-- ===== 悔改引导页（深色模式） ===== -->
+    <color name="repentance_page_bg">#1A1A1F</color>
+    <color name="repentance_warning_text">#EF9A9A</color>
+    <color name="repentance_text_primary">#E0DDD8</color>
+    <color name="repentance_divider">#EF9A9A</color>
+    <color name="repentance_text_call">#E8E6E0</color>
+    <color name="repentance_scripture_bg">#3A3520</color>
+    <color name="repentance_scripture_text">#E0B040</color>
+    <color name="repentance_progression_text">#C8A840</color>
+    <color name="repentance_btn_primary_bg">#2E7D32</color>
+    <color name="repentance_btn_primary_text">#FFFFFF</color>
+    <color name="repentance_btn_secondary_bg">#3A3A42</color>
+    <color name="repentance_btn_secondary_text">#9A958C</color>
+</resources>

@@ -63,7 +63,8 @@ object DisposalExecutor {
                 InAppLogger.i("悔改页已通过无障碍服务直接拉起（第 $hitCount 次命中）")
                 // 抑制金句/中性通知，切换为悔改警示通知（若服务正在运行）
                 // 非 DO 路径不经过 MonitoringService.onCreate，需显式通知服务抑制金句通知
-                MonitoringService.suppressNotification(context)
+                // 透传命中信息：警示通知 contentIntent 需携带 reason/hitCount 以正确拉起悔改页
+                MonitoringService.suppressNotification(context, result.reason, result.timestamp, hitCount)
             } else {
                 InAppLogger.e("无障碍服务 startActivity 失败，降级为 MonitoringService 通知兜底")
                 MonitoringService.startShowRepentance(context, result.reason, result.timestamp, hitCount)
@@ -74,7 +75,8 @@ object DisposalExecutor {
             // 避免悔改页启动时窗口切换动画中违规包短暂回前台被误 HOME（把悔改页一并踢掉）。
             if (blockMs > 0L) {
                 MonitorState.setBlock(blockMs, result.packageName)
-                InAppLogger.w("非设备所有者：已设置阻断期 ${blockMs / 1000} 秒（第 $hitCount 次命中），阻断期内违规包回前台将持续 HOME")
+                val remaining = MonitorState.getBlockRemainingSec()
+                InAppLogger.w("非设备所有者：已设置阻断期 ${blockMs / 1000} 秒（第 $hitCount 次命中），当前剩余 ${remaining} 秒，阻断期内违规包回前台将持续 HOME")
             }
             return
         }

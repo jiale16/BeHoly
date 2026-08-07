@@ -93,6 +93,23 @@ class MonitoringService : Service() {
         @Volatile
         private var pendingRepentanceAction = false
 
+        /** 最近一次命中的悔改信息，供警示前台通知 contentIntent 构造使用。
+         *  跨进程重启会丢失（可接受：最坏情况 hitCount=0 显示标准悔改页，无递进文案）。 */
+        @Volatile
+        private var lastRepentanceReason: String = ""
+        @Volatile
+        private var lastRepentanceHitTime: Long = 0L
+        @Volatile
+        private var lastRepentanceHitCount: Int = 0
+
+        /** 更新最近一次命中信息（供警示通知 contentIntent 拉起 RepentanceActivity 时携带）。
+         *  各命中入口（startShowRepentance / startDispose / suppressNotification）均调用此方法。 */
+        private fun updateLastRepentanceInfo(reason: String, hitTime: Long, hitCount: Int) {
+            lastRepentanceReason = reason
+            lastRepentanceHitTime = hitTime
+            lastRepentanceHitCount = hitCount
+        }
+
         const val EXTRA_TIER = "extra_tier"
         const val EXTRA_PACKAGE = "extra_package"
         const val EXTRA_WORDS = "extra_words"
@@ -124,6 +141,7 @@ class MonitoringService : Service() {
         /** 静态便捷方法：请求拉起悔改页。标记悔改动作，使 onCreate 用警示通知而非金句。 */
         fun startShowRepentance(context: Context, reason: String, hitTime: Long, hitCount: Int = 0) {
             pendingRepentanceAction = true
+            updateLastRepentanceInfo(reason, hitTime, hitCount)
             val intent = Intent(context, MonitoringService::class.java).apply {
                 action = ACTION_SHOW_REPENTANCE
                 putExtra(Constants.EXTRA_REASON, reason)
@@ -134,8 +152,17 @@ class MonitoringService : Service() {
         }
 
         /** 静态便捷方法：抑制金句通知并切换为悔改警示（悔改流程期间调用）。
-         *  仅在服务已运行时生效；服务未运行时无通知可抑制，安全跳过。 */
-        fun suppressNotification(context: Context) {
+         *  仅在服务已运行时生效；服务未运行时无通知可抑制，安全跳过。
+         *  @param reason 本次命中原因（供警示通知 contentIntent 拉起 RepentanceActivity 携带）
+         *  @param hitTime 本次命中时间戳
+         *  @param hitCount 同包累计命中次数（驱动悔改页递进文案） */
+        fun suppressNotification(
+            context: Context,
+            reason: String = "",
+            hitTime: Long = 0L,
+            hitCount: Int = 0
+        ) {
+            updateLastRepentanceInfo(reason, hitTime, hitCount)
             if (!isRunning) return
             val intent = Intent(context, MonitoringService::class.java).apply {
                 action = ACTION_SUPPRESS_NOTIFICATION
@@ -163,6 +190,7 @@ class MonitoringService : Service() {
             hitCount: Int = 0
         ) {
             pendingRepentanceAction = true
+            updateLastRepentanceInfo(reason, System.currentTimeMillis(), hitCount)
             val intent = Intent(context, MonitoringService::class.java).apply {
                 action = ACTION_DISPOSE
                 putExtra(EXTRA_TIER, tier)
@@ -328,18 +356,24 @@ class MonitoringService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            // 清理旧渠道（"beholy_monitor_channel"）：Android 删除同 ID 渠道后 24h 内重建会恢复旧
+            // importance，导致 IMPORTANCE_LOW 不生效。已切换到新 ID _v2，此处删除旧渠道避免残留。
+            runCatching { nm.deleteNotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_LEGACY) }
+
+            // IMPORTANCE_LOW：不在状态栏显示小图标，仅在下拉通知栏可见。
+            // 前台服务要求渠道 importance 不低于 LOW，此处为最低可用值。
             val channel = NotificationChannel(
                 Constants.NOTIFICATION_CHANNEL_ID,
                 "BeHoly 监护",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "离线内容监护常驻通知"
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
             }
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-                .createNotificationChannel(channel)
+            nm.createNotificationChannel(channel)
         }
     }
 
@@ -363,16 +397,34 @@ class MonitoringService : Service() {
     }
 
     /** 以悔改警示通知启动前台服务：命中时服务首次启动，用警示而非金句做前台通知，
-     *  避免金句通知闪现后再 cancel 的视觉问题。悔改流程结束后 restoreDailyNotification 恢复金句。 */
+     *  避免金句通知闪现后再 cancel 的视觉问题。悔改流程结束后 restoreDailyNotification 恢复金句。
+     *  contentIntent 指向 RepentanceActivity：用户点击"请悔改归向神"通知应进入悔改引导页，
+     *  而非 MainActivity。命中信息从 lastRepentance* 静态字段读取（各命中入口已更新）。
+     *  RepentanceActivity 为 singleTop：已在栈顶时走 onNewIntent 刷新，否则新建实例。 */
     private fun startForegroundWithRepentanceNotification() {
+        val openRepentanceIntent = Intent(this, RepentanceActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(Constants.EXTRA_REASON, lastRepentanceReason)
+            putExtra(Constants.EXTRA_HIT_TIME, lastRepentanceHitTime)
+            putExtra(Constants.EXTRA_HIT_COUNT, lastRepentanceHitCount)
+        }
+        // FLAG_UPDATE_CURRENT：每次命中刷新 extras，避免缓存旧的 reason/hitCount。
+        // requestCode=3 与 showRepentanceNotification 的 1/2 区分（虽不同通知 ID 不冲突，清晰起见）。
+        val contentPendingIntent = PendingIntent.getActivity(
+            this,
+            3,
+            openRepentanceIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notification = NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle("⚠ BeHoly 警示")
             .setContentText("请悔改归向神")
             .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setSound(null)
             .setVibrate(null)
+            .setContentIntent(contentPendingIntent)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -389,26 +441,36 @@ class MonitoringService : Service() {
     /** 抑制金句/中性通知，切换前台通知为悔改警示。
      *  用于命中后悔改流程：先取消当前的金句/中性通知，再将前台通知替换为悔改警示通知，
      *  避免金句/中性通知与悔改语义冲突。悔改流程结束后由 [restoreDailyNotification] 恢复。
-     *  幂等：已抑制时直接返回。 */
+     *
+     *  金句取消部分幂等（已抑制时跳过）；警示通知刷新部分每次都执行——
+     *  新命中时 lastRepentance* 已更新，需重新构建 PendingIntent 并 re-notify，
+     *  否则用户点击通知拿到的是旧命中信息（旧 reason / 旧 hitCount）。 */
     private fun suppressDailyForRepentance() {
-        if (dailyNotificationSuppressed) return
-        dailyNotificationSuppressed = true
-        // 先取消当前的金句/中性通知（切换前台通知 ID 前清理旧通知）
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.cancel(Constants.NOTIFICATION_DAILY_ID)
-        // 切换前台通知为悔改警示（使用 NOTIFICATION_ALERT_ID）
+        if (!dailyNotificationSuppressed) {
+            dailyNotificationSuppressed = true
+            // 先取消当前的金句/中性通知（切换前台通知 ID 前清理旧通知）
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.cancel(Constants.NOTIFICATION_DAILY_ID)
+            InAppLogger.i("前台通知已切换为悔改警示，金句通知已抑制")
+        }
+        // 每次都刷新警示通知：用当前 lastRepentance* 值重建 PendingIntent，
+        // 确保新命中的 reason/hitCount 反映到通知点击行为中
         startForegroundWithRepentanceNotification()
-        InAppLogger.i("前台通知已切换为悔改警示，金句通知已抑制")
     }
 
     /** 恢复常驻通知：悔改流程结束后，若用户已开启金句则恢复金句，否则恢复中性守护通知。
-     *  切换回金句/中性通知前先取消悔改警示通知，避免通知栏残留。 */
+     *  切换回金句/中性通知前先取消悔改警示通知，避免通知栏残留。
+     *  无条件取消 NOTIFICATION_ALERT_ID 和 HIT_NOTIFICATION_ID：
+     *  即便 dailyNotificationSuppressed 因服务重启等场景状态不一致（重置为 false），
+     *  也要确保悔改相关通知被清理，避免通知栏残留 ongoing 通知用户无法消除。 */
     private fun restoreDailyNotification() {
-        if (!dailyNotificationSuppressed) return
-        dailyNotificationSuppressed = false
-        // 取消悔改警示通知（前台通知即将切换回金句/中性通知 ID）
+        // 无条件取消悔改相关通知，防止状态不一致导致残留
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.cancel(Constants.NOTIFICATION_ALERT_ID)
+        nm.cancel(Constants.HIT_NOTIFICATION_ID)
+
+        if (!dailyNotificationSuppressed) return
+        dailyNotificationSuppressed = false
         if (isDailyEnabled(this)) {
             startForegroundSafe()
             InAppLogger.i("金句通知已恢复（悔改流程结束）")
@@ -460,7 +522,7 @@ class MonitoringService : Service() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setSound(null)
             .setVibrate(null)
             .setContentIntent(contentPendingIntent)

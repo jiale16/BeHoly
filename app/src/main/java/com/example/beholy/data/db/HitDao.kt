@@ -39,7 +39,6 @@ interface HitDao {
     /**
      * 查询指定包名「今天」（本地时区）的命中次数。
      * 用 SQLite strftime 将 timestamp 毫秒转本地日期，与当前本地日期比对。
-     * 供悔改页「第 N 次命中」展示与阻断期时长递进使用。
      */
     @Query(
         "SELECT COUNT(*) FROM hit_records " +
@@ -48,6 +47,18 @@ interface HitDao {
             "strftime('%Y-%m-%d', 'now', 'localtime')"
     )
     suspend fun countTodayByPackage(pkg: String): Int
+
+    /**
+     * 查询「今天」（本地时区）所有包名的命中总次数。
+     * 供悔改页「第 N 次命中」展示与阻断期时长递进使用——
+     * 悔改次数以当天总命中计，而非按应用分别计数。
+     */
+    @Query(
+        "SELECT COUNT(*) FROM hit_records " +
+            "WHERE strftime('%Y-%m-%d', timestamp/1000, 'unixepoch', 'localtime') = " +
+            "strftime('%Y-%m-%d', 'now', 'localtime')"
+    )
+    suspend fun countToday(): Int
 
     /** 清空所有命中记录。 */
     @Query("DELETE FROM hit_records")

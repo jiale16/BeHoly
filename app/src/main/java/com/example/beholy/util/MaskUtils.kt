@@ -1,15 +1,15 @@
 package com.example.beholy.util
 
 /**
- * 掩码工具：在悔改日记与日志中，命中的敏感词只显示首字，其余以 * 代替，
+ * 掩码工具：在悔改日记与日志中，命中的敏感词全部以 * 代替，
  * 避免明文暴露被检测到的内容。
  */
 object MaskUtils {
 
-    /** 对单个词做掩码：保留首字，其余字符替换为 *。空串或单字原样返回。 */
+    /** 对单个词做掩码：所有字符替换为 *。空串原样返回。 */
     fun maskWord(word: String): String {
-        if (word.length <= 1) return word
-        return word.first() + "*".repeat(word.length - 1)
+        if (word.isEmpty()) return word
+        return "*".repeat(word.length)
     }
 
     /**

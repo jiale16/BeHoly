@@ -10,7 +10,7 @@
     <color name="beholy_card_bg">#FFFFFF</color>
     <color name="beholy_card_border">#E6E0D6</color>
     <color name="beholy_text_primary">#2D2A3A</color>
-    <color name="beholy_text_secondary">#8A8478</color>
+    <color name="beholy_text_secondary">#6B6356</color>
     <!-- 左侧色条/类型徽标：成人画面(暖红) / 敏感文字(橙) / 两者(紫) -->
     <color name="beholy_bar_adult">#E57373</color>
     <color name="beholy_bar_text">#F0A030</color>
@@ -19,4 +19,20 @@
     <color name="beholy_chip_bg">#F1ECE2</color>
     <color name="beholy_chip_text">#6B6356</color>
     <color name="beholy_overview_bg">#FFFFFF</color>
+    <color name="beholy_toolbar_bg">#FFFFFF</color>
+    <color name="beholy_toolbar_text">#2D2A3A</color>
+
+    <!-- ===== 悔改引导页（activity_repentance）语义色 ===== -->
+    <color name="repentance_page_bg">#F7F5FB</color>
+    <color name="repentance_warning_text">#E74C3C</color>
+    <color name="repentance_text_primary">#37474F</color>
+    <color name="repentance_divider">#E74C3C</color>
+    <color name="repentance_scripture_bg">#FFF3D6</color>
+    <color name="repentance_scripture_text">#C9971B</color>
+    <color name="repentance_text_call">#2D2A3A</color>
+    <color name="repentance_progression_text">#8E6B2C</color>
+    <color name="repentance_btn_primary_bg">#27AE60</color>
+    <color name="repentance_btn_primary_text">#FFFFFF</color>
+    <color name="repentance_btn_secondary_bg">#ECEFF1</color>
+    <color name="repentance_btn_secondary_text">#546E7A</color>
 </resources>

@@ -35,16 +35,16 @@ object Constants {
     /**
      * 非 DO 下的持续打断时长阶梯（毫秒）：命中后该时长内违规包回前台立刻 HOME。
      * 由同包累计命中次数驱动，等级递进体现「越陷越深，呼唤越恳切」。
-     * - 第 1-2 次：30 秒——初次跌倒，给一个短暂的打断与悔改呼召
-     * - 第 3-4 次（达 TIER2_HIT_THRESHOLD）：2 分钟——反复跌倒，延长冷静
-     * - 第 5+ 次（达 TIER3_HIT_THRESHOLD）：5 分钟——深陷其中，给足停顿与对质时间
+     * - 第 1-2 次：1 分钟——初次跌倒，给一个短暂的打断与悔改呼召
+     * - 第 3-4 次（达 TIER2_HIT_THRESHOLD）：5 分钟——反复跌倒，延长冷静
+     * - 第 5+ 次（达 TIER3_HIT_THRESHOLD）：15 分钟——深陷其中，给足停顿与对质时间
      *
      * DO 下不使用此阶梯（DO 走封禁+锁屏，有更强的系统级约束）。
      */
     val BLOCK_DURATION_BY_HIT_COUNT: List<Pair<IntRange, Long>> = listOf(
-        1..2 to 30_000L,
-        3..4 to 120_000L,
-        5..Int.MAX_VALUE to 300_000L
+        1..2 to 60_000L,
+        3..4 to 300_000L,
+        5..Int.MAX_VALUE to 900_000L
     )
 
     /**
@@ -94,7 +94,8 @@ object Constants {
         "com.tencent.wetype",      // ← 新增
         "com.meizu.suggestion",    // ← 新增
         "com.meizu.mstore",        // ← 魅族应用商店内不触发敏感词检测
-        "com.meizu.net.pedometer"  // ← 魅族计步器
+        "com.meizu.net.pedometer", // ← 魅族计步器
+        "com.tencent.workbuddy.app" // ← WorkBuddy 自身，不触发敏感词检测
     )
 
     /**
@@ -120,7 +121,15 @@ object Constants {
     )
 
     // ===== 通知 =====
-    const val NOTIFICATION_CHANNEL_ID: String = "beholy_monitor_channel"
+    /**
+     * 前台服务常驻通知渠道 ID。
+     * v2：原 "beholy_monitor_channel" 因 Android 删除重建同 ID 渠道会恢复旧 importance，
+     * 导致 IMPORTANCE_LOW 不生效（状态栏残留小图标）。改用新 ID 强制 IMPORTANCE_LOW 生效。
+     * 旧渠道在 [MonitoringService.createNotificationChannel] 中清理删除。
+     */
+    const val NOTIFICATION_CHANNEL_ID: String = "beholy_monitor_channel_v2"
+    /** 已废弃的旧渠道 ID，启动时删除以避免系统设置中出现两个 BeHoly 渠道 */
+    const val NOTIFICATION_CHANNEL_ID_LEGACY: String = "beholy_monitor_channel"
     /** 前台服务常驻通知 ID（金句） */
     const val NOTIFICATION_DAILY_ID: Int = 1001
     /** 前台服务警示通知 ID（悔改/处置期间使用，与金句分开避免覆盖） */

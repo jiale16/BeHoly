@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F5FB"
+    android:background="@color/repentance_page_bg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -22,7 +22,7 @@
             android:text="⚠ 警示"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#E74C3C"
+            android:textColor="@color/repentance_warning_text"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp" />
 
@@ -33,7 +33,7 @@
             android:gravity="center"
             android:text="你正在浏览的内容不讨神喜悦。\n这罪正在偷走你与神的亲密。"
             android:textSize="16sp"
-            android:textColor="#37474F"
+            android:textColor="@color/repentance_text_primary"
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="28dp" />
 
@@ -41,31 +41,31 @@
         <View
             android:layout_width="60dp"
             android:layout_height="2dp"
-            android:background="#E74C3C"
+            android:background="@color/repentance_divider"
             android:layout_marginBottom="28dp" />
 
         <!-- 经文 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FFF3D6"
+            android:background="@color/repentance_scripture_bg"
             android:padding="20dp"
             android:text="「你们要圣洁，因为我是圣洁的。」\n\n—— 彼得前书 1:16"
             android:textSize="17sp"
             android:textStyle="italic"
-            android:textColor="#C9971B"
+            android:textColor="@color/repentance_scripture_text"
             android:lineSpacingExtra="6dp"
             android:layout_marginBottom="24dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FFF3D6"
+            android:background="@color/repentance_scripture_bg"
             android:padding="20dp"
             android:text="「务要抵挡魔鬼，魔鬼就必离开你们逃跑了。你们亲近神，神就必亲近你们。」\n\n—— 雅各书 4:7-8"
             android:textSize="17sp"
             android:textStyle="italic"
-            android:textColor="#C9971B"
+            android:textColor="@color/repentance_scripture_text"
             android:lineSpacingExtra="6dp"
             android:layout_marginBottom="28dp" />
 
@@ -76,7 +76,7 @@
             android:gravity="center"
             android:text="现在就是悔改的时刻。\n转离这罪，归向你的神。\n祂的恩典够你用的，\n祂的慈爱永不断绝。"
             android:textSize="16sp"
-            android:textColor="#2D2A3A"
+            android:textColor="@color/repentance_text_call"
             android:lineSpacingExtra="6dp"
             android:layout_marginBottom="24dp" />
 
@@ -89,7 +89,7 @@
             android:gravity="center"
             android:textSize="15sp"
             android:textStyle="italic"
-            android:textColor="#8E6B2C"
+            android:textColor="@color/repentance_progression_text"
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="16dp"
             android:visibility="gone" />
@@ -102,8 +102,8 @@
             android:text="我愿意悔改归向神"
             android:textSize="19sp"
             android:textStyle="bold"
-            android:backgroundTint="#27AE60"
-            android:textColor="#FFFFFF"
+            android:backgroundTint="@color/repentance_btn_primary_bg"
+            android:textColor="@color/repentance_btn_primary_text"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp" />
 
@@ -114,8 +114,8 @@
             android:layout_height="40dp"
             android:text="返回 BeHoly"
             android:textSize="13sp"
-            android:backgroundTint="#ECEFF1"
-            android:textColor="#B0BEC5" />
+            android:backgroundTint="@color/repentance_btn_secondary_bg"
+            android:textColor="@color/repentance_btn_secondary_text" />
 
     </LinearLayout>
 </ScrollView>

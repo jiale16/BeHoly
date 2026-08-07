@@ -143,6 +143,8 @@ class MainActivity : AppCompatActivity() {
 
         btnViewRepentance.setOnClickListener { showRepentanceRecords() }
 
+        findViewById<LinearLayout>(R.id.card_devotion).setOnClickListener { openDevotion() }
+
         btnOpenAccessibility.setOnClickListener {
             permissionHelper.openAccessibilitySettings(this)
         }
@@ -302,6 +304,24 @@ class MainActivity : AppCompatActivity() {
     /** 打开回转记录查看页（整页卡片列表，替代原纯文本弹窗）。 */
     private fun showRepentanceRecords() {
         startActivity(Intent(this, RepentanceListActivity::class.java))
+    }
+
+    /** 打开 Lectio 365 灵修应用（com.prayer247.lectio365）。未安装时提示联系开发者获取。 */
+    private fun openDevotion() {
+        val pkg = "com.prayer247.lectio365"
+        val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+        if (launchIntent != null) {
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            runCatching { startActivity(launchIntent) }
+            InAppLogger.i("已打开 Lectio 365 灵修应用")
+        } else {
+            InAppLogger.w("Lectio 365 未安装，提示用户联系开发者获取")
+            AlertDialog.Builder(this)
+                .setTitle("未安装 Lectio 365")
+                .setMessage("Lectio 365 尚未安装，请联系开发者获取。")
+                .setPositiveButton("关闭", null)
+                .show()
+        }
     }
 
     /** 导出悔改记录：通过系统文件选择器（SAF）写入用户自选位置（无需存储权限，跨卸载保留）。 */
